@@ -1,0 +1,102 @@
+# Corelain Area Radar — Old Trafford (M16), Manchester
+
+> Area guide for Old Trafford, M16 (Trafford, Greater Manchester, UK): house prices, price growth, price per square foot, crime, schools, transport, flood risk, radon/mining, air quality, planning and regeneration. Built by Corelain (https://www.corelain.com/), a Manchester building surveying and property consultancy. Figures last reviewed 2026-10-07.
+
+Page: https://corelain-radar.vercel.app/
+
+## Key facts
+
+- Average property value (M16): £316,545 in the 12 months to 31 March 2026, from 191 sales; up 1.6% on the previous 12 months (HM Land Registry). UK annual growth: 1.4% (UK HPI, July 2026).
+- Price per square foot: about £360 (£3,880 per m²), median for the M16 0 postcode sector (housemetric).
+- Average sold price by year (M16): 2016 £176,750 · 2017 £210,404 · 2018 £196,381 · 2019 £173,802 · 2020 £252,426 · 2021 £266,573 · 2022 £278,942 · 2023 £265,977 · 2024 £293,817 · 2025 £322,464.
+- By type, last 3 years: detached £481,201 (37 sales), semi-detached £427,964 (246 sales), flats £172,921 (357 sales).
+- Crime: Trafford borough recorded 27 violent crimes per 1,000 residents in the year to September 2025, compared with 52 in Manchester (ONS). Neighbourhood-level category rates are not published for Greater Manchester.
+- Schools (Ofsted): Seymour Park Community Primary — Outstanding (Dec 2023); Stretford High School — Good (Dec 2019); Stretford Grammar School — Good; Trinity CofE High School — Good (Nov 2023); Old Trafford Community Academy — inspected Oct 2024 (no one-word grade since Sep 2024).
+- Transport: Old Trafford Metrolink stop (Altrincham line) about a 10-minute walk; about 10 minutes by tram to St Peter's Square (city centre); trams every 6–12 minutes; M60 junction 7 about 2.3 miles.
+- Flood risk (Environment Agency, long-term): low overall — rivers and sea very low; surface water low; groundwater low.
+- Ground: radon potential class 1 of 6 (lowest; under 1% of homes above the action level). Check the Coal Authority map before purchase.
+- Air quality: within the A56 Chester Road Air Quality Management Area; roadside NO₂ annual mean about 30 µg/m³ (legal limit 40).
+- Conservation: the stadium area is outside a conservation area; nearest are Empress (1996) and Longford (25 Sep 1996) conservation areas.
+- Regeneration: Old Trafford Regeneration Mayoral Development Corporation launched January 2026 (370-acre district, about 15,000 homes, chair Lord Coe); Manchester United secured land for a new 100,000-seat stadium in June 2026; Trafford Wharfside masterplan published July 2026.
+
+<!-- FAQ:START -->
+## Frequently asked questions
+
+### House prices
+
+- **What is the average house price in Old Trafford (M16)?** The average sold price in M16 was £316,545 in the 12 months to 31 March 2026, based on 191 sales (HM Land Registry).
+- **Are house prices in Old Trafford going up?** Yes. Prices rose 1.6% on the previous 12 months, slightly ahead of UK annual growth of 1.4% (UK HPI, July 2026). Over 2016–2025 the yearly average rose from £176,750 to £322,464, about 82%.
+- **How much does property cost per square foot in Old Trafford?** About £360 per square foot (£3,880 per m²), the median for the local postcode sector.
+- **How much do flats and houses cost in Old Trafford?** Over the last three years flats averaged £172,921 (357 sales), semi-detached homes £427,964 (246 sales) and detached homes £481,201 (37 sales). Detached figures rest on very few sales, so treat them with caution.
+
+### Crime & safety
+
+- **Is Old Trafford a safe area?** Old Trafford sits in Trafford borough, which recorded 27 violent crimes per 1,000 residents in the year to September 2025 — one of the lowest rates in the North West (ONS). Old Trafford is among the more deprived parts of the borough, so street-level rates may differ from the borough average.
+- **How does crime in Trafford compare with Manchester?** Trafford's violent crime rate of 27 per 1,000 residents is about 48% lower than Manchester's 52 per 1,000 (ONS, year to September 2025).
+- **Why is there no street-level crime data for Old Trafford?** Greater Manchester Police does not currently publish street-level crime records to police.uk, so neighbourhood rates for categories such as burglary or vehicle crime are not available. The borough figure is the most reliable published measure.
+
+### Schools
+
+- **What are the best primary schools near Old Trafford?** Seymour Park Community Primary, about 1.0 mile away, is rated Outstanding by Ofsted (December 2023). Old Trafford Community Academy, about 1.1 miles away, was inspected in October 2024.
+- **Which secondary schools are near Old Trafford?** Stretford High School (about 0.9 miles), Stretford Grammar School (a selective grammar, about 1.2 miles) and Trinity CofE High School (ages 11–19, about 1.8 miles) are all rated Good by Ofsted.
+- **Why does Old Trafford Community Academy have no Ofsted grade?** Ofsted stopped giving a one-word overall grade for inspections from September 2024. The academy's October 2024 report covers each area separately instead.
+
+### Transport
+
+- **How do you get from Old Trafford to Manchester city centre?** Walk about 10 minutes to Old Trafford Metrolink stop, then take the Altrincham line tram to St Peter's Square in about 10 minutes — roughly 20 minutes door to door.
+- **How often do trams run from Old Trafford?** Trams on the Altrincham line run every 6–12 minutes. Trafford Bar stop is also close by.
+- **Is Old Trafford close to the motorway?** Yes. Junction 7 of the M60 (Stretford) is about 2.3 miles away.
+- **Does the Manchester United Football Ground station open every day?** No. Manchester United Football Ground station opens on matchdays only.
+
+### Flood risk
+
+- **Is Old Trafford at risk of flooding?** Long-term flood risk is low overall. The Environment Agency rates the risk from rivers and the sea as very low, and from surface water and groundwater as low.
+- **Does the Manchester Ship Canal increase flood risk?** The canal is nearby, and flooding from it is modelled in the Manchester–Salford–Trafford Strategic Flood Risk Assessment (SFRA). Most of the area lies outside Environment Agency high and medium risk zones.
+- **How can I check the flood risk for a specific property?** Surface-water risk varies from street to street, so check the exact postcode on the Environment Agency's long-term flood risk service (check-long-term-flood-risk.service.gov.uk) before you buy.
+
+### Ground & radon
+
+- **Is radon a concern in Old Trafford?** No. Old Trafford is in radon potential class 1 of 6 — the lowest — where fewer than 1% of homes are above the action level.
+- **Is Old Trafford in a coal mining area?** This has not been verified yet. Check the property with the Coal Authority before purchase via gov.uk/check-if-property-is-affected-by-coal-mining.
+- **Is there a risk of ground subsidence in Old Trafford?** Natural ground subsidence risk is rated low.
+
+### Air quality
+
+- **What is the air quality like in Old Trafford?** Old Trafford lies within or next to Trafford's A56 Chester Road Air Quality Management Area. Roadside nitrogen dioxide averaged about 30 µg/m³ a year, below the legal limit of 40.
+- **What is an Air Quality Management Area (AQMA)?** An AQMA is an area where a council has found that a national air quality objective may not be met, and has to act on it. In Old Trafford it covers the busy A56 Chester Road corridor.
+- **Where do the live air quality readings come from?** The live PM2.5, NO₂, PM10 and European AQI readings come from the Open-Meteo air quality model. They are modelled values for the area, not readings from a single roadside monitor.
+
+### Developments
+
+- **What is being built in Old Trafford?** The Old Trafford Regeneration Mayoral Development Corporation, launched in January 2026, covers a 370-acre district with about 15,000 new homes. Manchester United secured land for a new 100,000-seat stadium in June 2026, and the Trafford Wharfside masterplan was published in July 2026.
+- **When will the new Manchester United stadium open?** No opening date has been set. In September 2026 the corporation's chair, Lord Coe, said the timescale is uncertain while scoping and land acquisition continue.
+- **How many homes and jobs will the regeneration bring?** The plans aim for about 15,000 homes and 48,000 local jobs.
+
+### Conservation
+
+- **Is Old Trafford in a conservation area?** The stadium area is outside a conservation area. The nearest are the Empress Conservation Area (Chester Road / Empress Street) and the Longford Conservation Area (Longford Park), both designated in 1996.
+- **Are there listed buildings in Old Trafford?** Trafford Town Hall nearby is a Grade II listed building.
+- **Is Old Trafford in the Green Belt?** No. There is no Article 4 direction in the Longford Conservation Area either.
+
+### Local services
+
+- **Which estate agents cover Old Trafford?** Agents covering M16 include David Andrews Homes (Upper Chorlton Road, Old Trafford), Trading Places (Stretford), Bridgfords and Jordan Fishwick (Chorlton) and Park Lane Estates (Urmston).
+- **Are there local community groups in Old Trafford?** Yes. Local Facebook pages include M16 Old Trafford Group, My Stretford, Trafford Community News, St John's Centre Old Trafford and My Trafford from the Manchester Evening News.
+- **Do I need a party wall surveyor for building work in Old Trafford?** If you plan work on a shared wall, a loft conversion or an extension next to a neighbour, or excavation near their foundations, the Party Wall etc. Act 1996 may require you to serve notice. Corelain's party wall surveyors handle notices and awards across Greater Manchester.
+
+<!-- FAQ:END -->
+
+## Sources
+
+- HM Land Registry price paid data (via https://propertyinsightsuk.co.uk/postcodes/m16/)
+- ONS house prices, Trafford: https://www.ons.gov.uk/visualisations/housingpriceslocal/E08000009/
+- Price per m²: https://housemetric.co.uk/analysis/sector/M16-7/Old-Trafford
+- Ofsted reports: https://reports.ofsted.gov.uk/
+- Environment Agency flood risk: https://check-long-term-flood-risk.service.gov.uk/postcode
+- Coal mining check: https://www.gov.uk/check-if-property-is-affected-by-coal-mining
+- Old Trafford Regeneration MDC: https://www.trafford.gov.uk/news/2026/old-trafford-regeneration-mayoral-development-corporation-officially-launched
+
+## Corelain
+
+- Party Wall surveyors in Manchester: https://www.corelain.com/party-wall-surveyor-manchester
+- Services: https://www.corelain.com/our-services

@@ -1,0 +1,2037 @@
+<!doctype html>
+<html lang="en-GB" data-ax-route="dashboards/area-radar" data-cr-shell="topbar" data-cr-title>
+<head><meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+
+<!-- ============================================================ -->
+<!-- VIREO ANTI-FLASH THEME RESTORE — MUST be first executable    -->
+<!-- in <head>, before any stylesheet. Runs synchronously (~1ms), -->
+<!-- reads ax: localStorage, resolves system theme via matchMedia,-->
+<!-- and writes all data-ax-* + dir + lang on <html> before paint.-->
+<!-- Framework-agnostic IIFE; try/catch so storage never blocks.  -->
+<!-- ============================================================ -->
+<script>
+/* Vireo anti-flash — must be FIRST in <head>, before stylesheets. */
+(function () {
+  var D = document.documentElement, LS;
+  try { LS = window.localStorage; } catch (e) { LS = null; }
+  function get(k){ try { return LS && LS.getItem(k); } catch(e){ return null; } }
+
+  /* schema guard: wipe unknown shape, never throw */
+  try { if (LS && get('ax:schema') && get('ax:schema') !== '1') {
+    Object.keys(LS).forEach(function(k){ if (k.indexOf('ax:')===0) LS.removeItem(k); });
+  } if (LS) LS.setItem('ax:schema','1'); } catch(e){}
+
+  /* ---- THEME (light | dark | system) ---- */
+  var theme = get('ax:theme') || 'system';
+  var sysDark = false;
+  try { sysDark = window.matchMedia('(prefers-color-scheme: dark)').matches; } catch(e){}
+  var resolved = (theme === 'system') ? (sysDark ? 'dark' : 'light') : theme;
+  D.setAttribute('data-ax-theme', resolved);  /* always written so CSS [data-ax-theme] selectors match */
+
+  /* ---- ACCENT ---- */
+  var accent = get('ax:accent') || 'verdigris';
+  if (accent === 'verdigris') D.removeAttribute('data-ax-accent');
+  else D.setAttribute('data-ax-accent', accent);
+
+  /* ---- FONT (any Google family; the default, Inter, needs no attr + no link) ----
+     Mirrors js/core/fonts.js. Injected here rather than after boot so the face
+     is already in flight when the first paint happens — otherwise every page
+     load would flash Inter before swapping. A family chosen in the customizer
+     rides an INLINE --ax-font-sans, exactly as the custom accent colour does;
+     its weight ramp was resolved from the Google Fonts catalog at pick time and
+     persisted, because this script must rebuild the same URL without being able
+     to load that catalog. */
+  var fontFamily = (get('ax:font') === 'custom') ? get('ax:font-custom') : null;
+  if (fontFamily) {
+    D.setAttribute('data-ax-font', 'custom');
+    D.style.setProperty('--ax-font-sans', '"' + fontFamily + '", ui-sans-serif, system-ui, sans-serif');
+    var fl = document.createElement('link');
+    fl.id = 'ax-font-link'; fl.rel = 'stylesheet';
+    fl.href = 'https://fonts.googleapis.com/css2?family=' + fontFamily.replace(/ /g, '+') +
+              (get('ax:font-weights') || ':wght@400;500;600;700') + '&display=swap';
+    document.head.appendChild(fl);
+  } else { D.removeAttribute('data-ax-font'); }
+
+  /* ---- LANG + DIR ---- */
+  var lang = (get('ax:lang') || 'EN').toUpperCase();
+  D.setAttribute('lang', lang === 'EN' ? 'en-GB' : lang.toLowerCase());   /* EN -> en-GB (UK site) */
+  var dirStored = get('ax:dir');                              /* explicit wins */
+  var dir = dirStored ? dirStored : (lang === 'AR' ? 'rtl' : 'ltr');
+  D.setAttribute('dir', dir);
+
+  /* ---- LAYOUT / SCHEME attributes (write only non-defaults; keep DOM clean) ---- */
+  function setAttr(attr, key, def){
+    var v = get(key);
+    if (v && v !== def) D.setAttribute(attr, v); else D.removeAttribute(attr);
+  }
+  setAttr('data-ax-nav',              'ax:nav',              'vertical');
+  setAttr('data-ax-shell-style',      'ax:shell-style',      'default');
+  setAttr('data-ax-sidebar-behavior', 'ax:sidebar-behavior', 'collapsible');
+  setAttr('data-ax-menu',             'ax:menu',             'click');
+  setAttr('data-ax-page',             'ax:page',             'regular');
+  setAttr('data-ax-width',            'ax:width',            'fluid');
+  setAttr('data-ax-header-position',  'ax:header-position',  'fixed');
+  setAttr('data-ax-sidebar-position', 'ax:sidebar-position', 'fixed');
+  setAttr('data-ax-sidebar',          'ax:sidebar-scheme',   'light');
+  setAttr('data-ax-header',           'ax:header-scheme',    'light');
+  setAttr('data-ax-sidebar-image',    'ax:sidebar-image',    'none');
+  setAttr('data-ax-loader',           'ax:loader',           'on');
+
+  /* ---- COLLAPSED RAIL (header toggle; boolean presence, default expanded) ----
+     Only honoured in the 'collapsible' behavior. 'expanded'/'compact' lock the
+     rail (compact renders the icon rail via [data-ax-sidebar-behavior]), so the
+     persisted toggle must not re-collapse over them. */
+  var behavior = get('ax:sidebar-behavior') || 'collapsible';
+  if (behavior === 'collapsible' && get('ax:collapsed') === '1') D.setAttribute('data-ax-collapsed', '');
+  else D.removeAttribute('data-ax-collapsed');
+
+  /* ---- CUSTOM COLOR PICKERS (inline style; re-derive ramp deterministically) ---- */
+  var customAccent = get('ax:accent-custom');
+  if (accent === 'custom' && customAccent) {
+    /* full ramp derivation lives in customizer module; head script sets at least
+       --ax-accent + --ax-on-accent so first paint is correct. */
+    D.style.setProperty('--ax-accent', customAccent);
+    /* on-accent by luminance (sRGB approx) */
+    var h = customAccent.replace('#','');
+    var r=parseInt(h.substr(0,2),16),g=parseInt(h.substr(2,2),16),b=parseInt(h.substr(4,2),16);
+    var L = (0.2126*r + 0.7152*g + 0.0722*b)/255;
+    D.style.setProperty('--ax-on-accent', L > 0.62 ? '#1F1602' : '#FFFFFF');
+    D.setAttribute('data-ax-accent','custom');
+  }
+  var bg = get(resolved === 'dark' ? 'ax:bg-custom-dark' : 'ax:bg-custom');
+  if (bg) D.style.setProperty('--ax-canvas', bg);
+})();
+</script>
+
+<!-- ── SEO ── page-level values come in as partial params (seoTitle, seoDescription, …) -->
+<title>Old Trafford M16: House Prices, Crime &amp; Schools | Corelain</title>
+<meta name="description" content="Old Trafford (M16), Manchester: average house price £316,545 (+1.6%), £360/sq ft, crime, Ofsted schools, Metrolink, flood risk and regeneration." />
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+<link rel="canonical" href="https://corelain-radar.vercel.app/" />
+<link rel="alternate" hreflang="en-GB" href="https://corelain-radar.vercel.app/" />
+<link rel="alternate" hreflang="x-default" href="https://corelain-radar.vercel.app/" />
+<meta name="author" content="Corelain" />
+
+<!-- Open Graph / Twitter -->
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="Corelain Area Radar" />
+<meta property="og:locale" content="en_GB" />
+<meta property="og:url" content="https://corelain-radar.vercel.app/" />
+<meta property="og:title" content="Old Trafford (M16) area guide — prices, crime, schools &amp; risk" />
+<meta property="og:description" content="Old Trafford (M16), Manchester: average house price £316,545 (+1.6%), £360/sq ft, crime, Ofsted schools, Metrolink, flood risk and regeneration." />
+<meta property="og:image" content="https://corelain-radar.vercel.app/images/og-old-trafford.jpg" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content="Street in central Manchester — Corelain Area Radar for Old Trafford" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Old Trafford (M16) area guide — prices, crime, schools &amp; risk" />
+<meta name="twitter:description" content="Old Trafford (M16), Manchester: average house price £316,545 (+1.6%), £360/sq ft, crime, Ofsted schools, Metrolink, flood risk and regeneration." />
+<meta name="twitter:image" content="https://corelain-radar.vercel.app/images/og-old-trafford.jpg" />
+
+<!-- Local / geo signals -->
+<meta name="geo.region" content="GB-TRF" />
+<meta name="geo.placename" content="Old Trafford, Trafford, Greater Manchester" />
+<meta name="geo.position" content="53.4631;-2.2913" />
+<meta name="ICBM" content="53.4631, -2.2913" />
+
+<meta name="theme-color" content="#0A0C11" media="(prefers-color-scheme: dark)" />
+<meta name="theme-color" content="#FCFBF9" media="(prefers-color-scheme: light)" />
+<link rel="icon" type="image/png" href="/favicon.png" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+<link rel="manifest" href="/site.webmanifest" />
+
+<!-- Google Fonts — Inter (sans) · Space Grotesk (display) · JetBrains Mono (mono) · token brief §7.1 -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<!-- loaded without blocking first paint (font-display: swap); noscript fallback below -->
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" onload="this.onload=null;this.rel='stylesheet'" />
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" /></noscript>
+
+<!-- LCP: start the cover photo download with the HTML (same sources as the <picture>) -->
+<link rel="preload" as="image" href="/images/hero-m640.jpg" imagesrcset="/images/hero-m640.jpg 640w, /images/hero-m960.jpg 960w, /images/hero-m1200.jpg 1200w" imagesizes="100vw" media="(max-width: 640px)" fetchpriority="high" />
+<link rel="preload" as="image" href="/images/hero-1280.jpg" imagesrcset="/images/hero-1280.jpg 1280w, /images/hero-1920.jpg 1920w" imagesizes="(max-width: 1440px) 100vw, 1440px" media="(min-width: 641px)" fetchpriority="high" />
+
+<!-- Compiled application stylesheet (token chain + Tailwind v4 @theme bridge + shell/components) -->
+  <script type="module" crossorigin src="/assets/index-BVt4xd0Q.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-DYMhddCq.css">
+</head>
+<body>
+  <div class="ax-ambient" aria-hidden="true"><i></i></div>
+  <div class="ax-layout">
+    <div class="ax-shell">
+      <header class="ax-header" role="banner" x-data="axHeader()">
+        <!-- 1 · SIDEBAR TOGGLE -->
+        <button type="button" class="ax-nav-toggle ax-icon-btn" @click="toggleSidebar()" aria-label="Toggle menu" :aria-expanded="!collapsed">
+          <svg class="ax-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" width="24" height="24" aria-hidden="true"><path d="M4 6l16 0" /><path d="M4 12l16 0" /><path d="M4 18l16 0" /></svg>
+        </button>
+      
+        <!-- 1b · BRAND — only shown on top-bar-only pages (html[data-cr-shell="topbar"]) -->
+        <a class="cr-header-brand" href="/" aria-label="Corelain Dashboard home">
+          <img class="cr-header-brand__logo cr-header-brand__logo--light" src="/images/logo-light.png" alt="Corelain" width="579" height="108">
+          <img class="cr-header-brand__logo cr-header-brand__logo--dark" src="/images/logo-dark.png" alt="Corelain" width="579" height="108">
+          <img class="cr-header-brand__mark cr-header-brand__logo--light" src="/images/logo-mark-light.png" alt="Corelain" width="502" height="390">
+          <img class="cr-header-brand__mark cr-header-brand__logo--dark" src="/images/logo-mark-dark.png" alt="Corelain" width="502" height="390">
+        </a>
+      
+        <!-- 2 · COMMAND SEARCH (⌘K trigger) -->
+        <button type="button" class="ax-search" @click="$dispatch('ax-command-open')" aria-haspopup="dialog" aria-controls="ax-command">
+          <svg class="ax-icon ax-search__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" width="24" height="24" aria-hidden="true"><path d="M3 10a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" /><path d="M21 21l-6 -6" /></svg>
+          <span class="ax-search__placeholder">Search area or postcode…</span>
+          <kbd class="ax-search__keycap">⌘K</kbd>
+        </button>
+      
+        <span class="ax-header__spacer"></span>
+      
+        <!-- ===== RIGHT UTILITY CLUSTER =====
+             Shared with the full-screen app bar (partials/app-bar.html) so the two
+             chromes can never drift. Items 4–11 + the responsive overflow shed. -->
+          <!-- 5 · FULLSCREEN -->
+          <button type="button" class="ax-fullscreen ax-icon-btn" @click="toggleFullscreen()" :aria-pressed="full" aria-label="Toggle fullscreen">
+            <svg class="ax-icon" x-show="!full" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" width="24" height="24" aria-hidden="true"><path d="M4 8v-2a2 2 0 0 1 2 -2h2" /><path d="M4 16v2a2 2 0 0 0 2 2h2" /><path d="M16 4h2a2 2 0 0 1 2 2v2" /><path d="M16 20h2a2 2 0 0 0 2 -2v-2" /></svg>
+            <svg class="ax-icon" x-show="full" x-cloak viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" width="24" height="24" aria-hidden="true"><path d="M15 19v-2a2 2 0 0 1 2 -2h2" /><path d="M15 5v2a2 2 0 0 0 2 2h2" /><path d="M5 15h2a2 2 0 0 1 2 2v2" /><path d="M5 9h2a2 2 0 0 0 2 -2v-2" /></svg>
+          </button>
+        
+          <!-- 6 · LIGHT/DARK QUICK-TOGGLE -->
+          <button type="button" class="ax-theme-toggle ax-icon-btn" data-ax-toggle="theme" @click="toggleTheme()" :aria-pressed="theme==='dark'" aria-label="Toggle dark mode">
+            <svg class="ax-icon" x-show="theme==='dark'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" width="24" height="24" aria-hidden="true"><path d="M8 12a4 4 0 1 0 8 0a4 4 0 1 0 -8 0" /><path d="M3 12h1m8 -9v1m8 8h1m-9 8v1m-6.4 -15.4l.7 .7m12.1 -.7l-.7 .7m0 11.4l.7 .7m-12.1 -.7l-.7 .7" /></svg>
+            <svg class="ax-icon" x-show="theme!=='dark'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" width="24" height="24" aria-hidden="true"><path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454l0 .008" /></svg>
+          </button>
+        
+          <!-- 10 · CORELAIN SITE -->
+          <a class="cr-site-btn" href="https://www.corelain.com/" target="_blank" rel="noopener" aria-label="Visit Corelain (opens in a new tab)">
+            <span class="cr-site-btn__label">Visit Corelain</span>
+            <svg class="ax-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" width="24" height="24" aria-hidden="true"><path d="M12 6h-6a2 2 0 0 0 -2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-6" /><path d="M11 13l9 -9" /><path d="M15 4h5v5" /></svg>
+          </a>
+      </header>
+      <main class="ax-main" id="ax-main">
+        <!-- ════════════════ COVER HERO (full-bleed, under the header) ════════════════ -->
+        <section class="cr-hero" role="region" aria-label="Area overview">
+          <picture>
+            <source media="(max-width: 640px)" srcset="/images/hero-m640.jpg 640w, /images/hero-m960.jpg 960w, /images/hero-m1200.jpg 1200w" sizes="100vw">
+            <img class="cr-hero__img" src="/images/hero-1280.jpg" srcset="/images/hero-1280.jpg 1280w, /images/hero-1920.jpg 1920w" sizes="(max-width: 1440px) 100vw, 1440px" width="1920" height="840" alt="Street scene in central Manchester" fetchpriority="high" decoding="async">
+          </picture>
+          <div class="cr-hero__inner">
+            <nav class="ax-breadcrumb cr-hero__crumbs" data-cr-static aria-label="Breadcrumb">
+              <ol class="ax-breadcrumb__list" data-cr-crumbs>
+                <li class="ax-breadcrumb__item"><span>UK</span></li>
+                <li class="ax-breadcrumb__sep" aria-hidden="true"><svg class="ax-icon ax-icon--directional" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6l-6 6"/></svg></li>
+                <li class="ax-breadcrumb__item"><span>Manchester</span></li>
+                <li class="ax-breadcrumb__sep" aria-hidden="true"><svg class="ax-icon ax-icon--directional" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6l-6 6"/></svg></li>
+                <li class="ax-breadcrumb__item"><span>Trafford</span></li>
+                <li class="ax-breadcrumb__sep" aria-hidden="true"><svg class="ax-icon ax-icon--directional" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6l-6 6"/></svg></li>
+                <li class="ax-breadcrumb__item" aria-current="page"><span>Old Trafford</span></li>
+              </ol>
+            </nav>
+            <div class="cr-hero__body">
+              <span class="cr-hero__eyebrow">Area stats</span>
+              <h1 class="cr-hero__title" data-cr-area-name>Old Trafford</h1>
+              <p class="cr-hero__subtitle">Property Prices, Crime Rates, Area &amp; Demographic Insights · <span data-cr-area-place>M16, Trafford, Greater Manchester</span></p>
+              <div class="cr-hero__bar" x-data="crHeroActions()">
+                <!-- ── postcode search · compare ── -->
+                <div class="cr-hero__actions">
+                  <form class="cr-hero__search" role="search" @submit.prevent="search()">
+                    <label class="ax-visually-hidden" for="cr-postcode">Search area or postcode</label>
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0"/><path d="M21 21l-6 -6"/></svg>
+                    <input id="cr-postcode" type="search" list="cr-area-options" placeholder="Area or postcode" autocomplete="off" x-model="query" enterkeyhint="search">
+                    <datalist id="cr-area-options">
+                      <template x-for="a in areas" :key="a.id"><option :value="a.name" x-text="a.postcode"></option></template>
+                    </datalist>
+                  </form>
+                  <button type="button" class="cr-hero__cta cr-hero__cta--ghost" @click="compareOpen = true" aria-haspopup="dialog">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 18a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"/><path d="M15 6a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"/><path d="M7 16v-11h6"/><path d="M17 8v11h-6"/><path d="M10 2l3 3l-3 3"/><path d="M14 16l-3 3l3 3"/></svg>
+                    <span>Compare</span>
+                  </button>
+                </div>
+
+                <!-- ── COMPARE modal (template modal, lg) ── -->
+                <template x-teleport="body">
+                  <div class="ax-modal ax-modal--centered" x-show="compareOpen" x-cloak @keydown.escape.window="compareOpen = false" role="dialog" aria-modal="true" aria-labelledby="cr-compare-title">
+                    <div class="ax-modal__backdrop" x-show="compareOpen" x-transition.opacity @click="compareOpen = false"></div>
+                    <div class="ax-modal__dialog ax-modal__dialog--lg" x-show="compareOpen" x-transition x-trap.inert.noscroll="compareOpen">
+                      <div class="ax-modal__header">
+                        <h2 class="ax-modal__title" id="cr-compare-title">Compare areas</h2>
+                        <button type="button" class="ax-modal__close" @click="compareOpen = false" aria-label="Close compare"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6l-12 12"/><path d="M6 6l12 12"/></svg></button>
+                      </div>
+                      <div class="ax-modal__body">
+                        <div class="cr-compare__pick">
+                          <div class="cr-compare__fixed"><span class="cr-compare__label">This area</span><b x-text="areaName"></b></div>
+                          <span class="cr-compare__vs" aria-hidden="true">vs</span>
+                          <div style="flex:1;">
+                            <label class="cr-compare__label" for="cr-compare-select">Compare with</label>
+                            <select id="cr-compare-select" class="ax-input" x-model="compareId">
+                              <template x-for="a in areas.filter(a => a.id !== areaId)" :key="a.id">
+                                <option :value="a.id" x-text="`${a.name} · ${a.postcode}`"></option>
+                              </template>
+                            </select>
+                          </div>
+                        </div>
+                        <div class="ax-table-wrap">
+                          <table class="ax-table">
+                            <thead class="ax-table__head"><tr>
+                              <th class="ax-table__th" scope="col">Metric</th>
+                              <th class="ax-table__th ax-table__th--num" scope="col" x-text="areaName"></th>
+                              <th class="ax-table__th ax-table__th--num" scope="col" x-text="compareArea && compareArea.name"></th>
+                            </tr></thead>
+                            <tbody>
+                              <template x-for="row in compareRows" :key="row.label">
+                                <tr class="ax-table__row">
+                                  <td class="ax-table__td" x-text="row.label"></td>
+                                  <td class="ax-table__td ax-table__td--num" :class="{ 'cr-win': row.win === 'a' }" x-text="row.a"></td>
+                                  <td class="ax-table__td ax-table__td--num" :class="{ 'cr-win': row.win === 'b' }" x-text="row.b"></td>
+                                </tr>
+                              </template>
+                            </tbody>
+                          </table>
+                        </div>
+                        <p style="margin:var(--ax-space-3) 0 0;font-size:var(--ax-text-xs);color:var(--ax-text-subtle);">Highlighted = better value. Old Trafford figures are real; other areas are sample data.</p>
+                      </div>
+                      <div class="ax-modal__footer">
+                        <button type="button" class="ax-btn ax-btn--ghost" @click="compareOpen = false">Close</button>
+                        <a class="ax-btn ax-btn--primary" :href="compareArea ? compareHref : '#'">Open <span x-text="compareArea && compareArea.name"></span></a>
+                      </div>
+                    </div>
+                  </div>
+                </template>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ════════════════ DASHBOARD GRID ════════════════ -->
+        <div class="ax-dash-grid"
+          x-data="{
+            q: '',
+            activeId: 'loc-1',
+            mapType: 'map',
+            places: [
+              { id:'loc-1', name:'Old Trafford Stadium', addr:'Sir Matt Busby Way, Old Trafford M16 0RA', type:'Stadium', open:true, dist:'0.3 mi', c:'--ax-accent', ll:'53.4631,-2.2913' },
+              { id:'loc-2', name:'Old Trafford Metrolink', addr:'Warwick Rd, Old Trafford, Manchester', type:'Tram stop', open:true, dist:'0.5 mi', c:'--ax-viz-violet', ll:'53.4568,-2.2848' },
+              { id:'loc-3', name:'Emirates Old Trafford', addr:'Talbot Rd, Old Trafford M16 0PX', type:'Cricket ground', open:true, dist:'0.6 mi', c:'--ax-viz-pink', ll:'53.4563,-2.2873' },
+              { id:'loc-4', name:'IWM North', addr:'Trafford Wharf Rd, Salford Quays M17 1TZ', type:'Museum', open:true, dist:'0.9 mi', c:'--ax-viz-amber', ll:'53.4697,-2.2995' },
+              { id:'loc-5', name:'Longford Park', addr:'Edge Ln, Stretford, Manchester', type:'Park', open:true, dist:'1.6 mi', c:'--ax-viz-emerald', ll:'53.4440,-2.2940' },
+              { id:'loc-6', name:'Trafford Centre', addr:'Trafford Centre, Manchester M17 8AA', type:'Shopping centre', open:false, dist:'2.7 mi', c:'--ax-viz-cyan', ll:'53.4667,-2.3480' }
+            ],
+            get filtered(){ const t=this.q.trim().toLowerCase(); return t ? this.places.filter(p=>(p.name+' '+p.addr+' '+p.type).toLowerCase().includes(t)) : this.places; },
+            get active(){ return this.places.find(p => p.id === this.activeId) || this.places[0]; },
+            get embedSrc(){ const t = this.mapType==='satellite' ? '&t=k' : this.mapType==='terrain' ? '&t=p' : ''; return `https://www.google.com/maps?q=${this.active.ll}&z=15&hl=en&output=embed${t}`; }
+          }">
+
+          <!-- ───── MAP CANVAS (hero) ───── -->
+          <section class="ax-card ax-card--chart ax-col--8" role="region" aria-label="Map of nearby locations in Old Trafford" style="overflow:hidden;">
+            <div class="ax-card__header">
+              <div class="ax-card__titles">
+                <span class="ax-card__eyebrow">Live map</span>
+                <h2 class="ax-card__title" data-cr-area-label>Old Trafford, M16</h2>
+                <p class="ax-card__subtitle">Selected area · nearby amenities within 1.5 mi</p>
+              </div>
+              <div class="ax-card__actions">
+                <div class="ax-segment" role="group" aria-label="Map type">
+                  <button type="button" class="ax-segment__option" :class="{ 'is-active': mapType==='map' }" :aria-pressed="mapType==='map'" @click="mapType='map'">Map</button>
+                  <button type="button" class="ax-segment__option" :class="{ 'is-active': mapType==='satellite' }" :aria-pressed="mapType==='satellite'" @click="mapType='satellite'">Satellite</button>
+                  <button type="button" class="ax-segment__option" :class="{ 'is-active': mapType==='terrain' }" :aria-pressed="mapType==='terrain'" @click="mapType='terrain'">Terrain</button>
+                </div>
+              </div>
+            </div>
+            <div class="ax-card__body" style="padding-top:0;">
+              <!-- real Google Maps embed (no API key) — recenters on the active location -->
+              <div aria-label="Google map of nearby locations"
+                   style="position:relative;height:440px;border-radius:var(--ax-radius-lg);overflow:hidden;border:1px solid var(--ax-border);background:var(--ax-surface-subtle);">
+                <iframe :src="embedSrc" title="Google map of nearby locations"
+                        loading="lazy" referrerpolicy="no-referrer-when-downgrade"
+                        style="position:absolute;inset:0;width:100%;height:100%;border:0;"></iframe>
+
+                <!-- floating info panel for the active location (over the map) -->
+                <div x-transition.opacity
+                     style="position:absolute;left:var(--ax-space-4);top:var(--ax-space-4);min-width:240px;max-width:280px;
+                            background:var(--ax-surface-overlay);border:1px solid var(--ax-border);border-radius:var(--ax-radius-md);
+                            box-shadow:var(--ax-shadow-md);padding:var(--ax-space-4);z-index:6;pointer-events:none;">
+                  <div class="ax-cluster" style="gap:var(--ax-space-2);margin-bottom:var(--ax-space-1);flex-wrap:nowrap;">
+                    <span :style="`width:8px;height:8px;border-radius:50%;background:var(${active.c});flex:none;`"></span>
+                    <b style="color:var(--ax-text-strong);font-size:var(--ax-text-sm);" x-text="active.name"></b>
+                  </div>
+                  <p style="margin:0;font-size:var(--ax-text-xs);color:var(--ax-text-muted);" x-text="active.addr"></p>
+                  <div class="ax-cluster" style="gap:var(--ax-space-2);margin-top:var(--ax-space-3);">
+                    <span class="ax-badge ax-badge--soft ax-badge--pill" :class="active.open ? 'ax-badge--success' : 'ax-badge--danger'"><span class="ax-badge__dot"></span><span x-text="active.open ? 'Open now' : 'Closed'"></span></span>
+                    <span class="ax-badge ax-badge--soft ax-badge--pill ax-num" x-text="active.dist"></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- ───── LOCATIONS RAIL (search + list) ───── -->
+          <section class="ax-card ax-col--4" role="region" aria-label="Searchable list of nearby locations">
+            <div class="ax-card__header">
+              <div class="ax-card__titles">
+                <h2 class="ax-card__title">Nearby Locations</h2>
+                <p class="ax-card__subtitle"><span class="ax-num" x-text="filtered.length"></span> shown · click to focus the map</p>
+              </div>
+            </div>
+            <div class="ax-card__body" style="padding-top:0;display:flex;flex-direction:column;gap:var(--ax-space-3);">
+              <!-- search -->
+              <div class="ax-field__control">
+                <span class="ax-field__affix ax-field__affix--leading" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10a7 7 0 1 0 14 0a7 7 0 1 0 -14 0"/><path d="M21 21l-6 -6"/></svg>
+                </span>
+                <input type="search" class="ax-input ax-input--with-leading-icon" placeholder="Search nearby…" aria-label="Search nearby locations" x-model.debounce.150ms="q">
+              </div>
+
+              <!-- list -->
+              <ul class="ax-list ax-list--compact" style="max-height:392px;overflow:auto;">
+                <template x-for="p in filtered" :key="p.id">
+                  <li class="ax-list__row cr-place" :class="{ 'is-selected': activeId === p.id }" style="border-radius:var(--ax-radius-sm);">
+                    <button type="button" class="cr-place__btn" @click="activeId = p.id" :aria-pressed="activeId === p.id" :aria-label="`Show ${p.name} on the map`"></button>
+                    <span class="ax-list__leading">
+                      <span class="ax-avatar ax-avatar--sm ax-avatar--squircle" :style="`background:color-mix(in oklab, var(${p.c}) 18%, transparent); color:var(${p.c});`">
+                        <svg class="ax-avatar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" x-html="crPlaceIcons[p.type]"></svg>
+                      </span>
+                    </span>
+                    <span class="ax-list__content" style="min-width:0;">
+                      <span class="ax-list__title ax-truncate" style="font-weight:var(--ax-weight-medium);" x-text="p.name"></span>
+                      <span class="ax-truncate" style="display:block;font-size:var(--ax-text-xs);color:var(--ax-text-subtle);" x-text="p.type + ' · ' + p.addr"></span>
+                    </span>
+                    <span class="ax-list__trailing" style="text-align:end;">
+                      <span class="ax-num" style="display:block;font-size:var(--ax-text-xs);color:var(--ax-text-muted);" x-text="p.dist"></span>
+                      <span :style="`display:inline-block;width:7px;height:7px;border-radius:50%;margin-top:4px;background:var(${p.open ? '--ax-success-500' : '--ax-danger-500'});`"></span>
+                    </span>
+                  </li>
+                </template>
+              </ul>
+            </div>
+          </section>
+
+          <!-- ───── MARKET KPI ROW ─────
+               icon + title · value · change chip + comparison · trend line.
+               Old Trafford figures: HM Land Registry (M16), UK HPI, housemetric. -->
+          <div class="ax-card ax-kpi cr-kpi ax-col--3" role="region" aria-label="Average property value £316,545, up 1.6% vs previous 12 months">
+            <div class="cr-kpi__body">
+              <div class="cr-kpi__head">
+                <span class="ax-kpi__icon ax-kpi__icon--c1">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l-2 0l9 -9l9 9l-2 0"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7"/><path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6"/></svg>
+                </span>
+                <span class="cr-kpi__label">Average property value</span>
+              </div>
+              <div class="cr-kpi__value ax-num">£316,545</div>
+              <div class="cr-kpi__change">
+                <span class="ax-kpi__delta ax-kpi__delta--up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15l6 -6l6 6"/></svg>1.6%</span>
+                <span class="cr-kpi__cmp">vs previous 12 months</span>
+              </div>
+              <div class="cr-kpi__spark" data-ax-chart="apex" data-ax-chart-type="area" data-ax-chart-sparkline="true" data-ax-chart-tooltip="false" data-ax-chart-height="48" data-ax-chart-color="--ax-accent" data-ax-chart-series='[{"name":"£K","data":[177,210,196,174,252,267,279,266,294,322]}]' aria-hidden="true"></div>
+            </div>
+          </div>
+
+          <div class="ax-card ax-kpi cr-kpi ax-col--3" role="region" aria-label="Annual growth 1.6%, 0.2 points above the UK average of 1.4%">
+            <div class="cr-kpi__body">
+              <div class="cr-kpi__head">
+                <span class="ax-kpi__icon ax-kpi__icon--c2">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17l6 -6l4 4l8 -8"/><path d="M14 7l7 0l0 7"/></svg>
+                </span>
+                <span class="cr-kpi__label">Annual growth</span>
+              </div>
+              <div class="cr-kpi__value ax-num">+1.6%</div>
+              <div class="cr-kpi__change">
+                <span class="ax-kpi__delta ax-kpi__delta--up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15l6 -6l6 6"/></svg>0.2 pts</span>
+                <span class="cr-kpi__cmp">vs UK avg 1.4%</span>
+              </div>
+              <div class="cr-kpi__spark" data-ax-chart="apex" data-ax-chart-type="area" data-ax-chart-sparkline="true" data-ax-chart-tooltip="false" data-ax-chart-height="48" data-ax-chart-color="--ax-viz-cyan" data-ax-chart-series='[{"name":"Growth %","data":[7.5,19.0,-6.7,-11.5,45.2,5.6,4.6,-4.6,10.5,9.7]}]' aria-hidden="true"></div>
+            </div>
+          </div>
+
+          <!-- Days on market: no source found yet (TBD) — no change chip, no trend line. -->
+          <div class="ax-card ax-kpi cr-kpi ax-col--3" role="region" aria-label="Average days on market: not available yet" data-cr-todo="days-on-market">
+            <div class="cr-kpi__body">
+              <div class="cr-kpi__head">
+                <span class="ax-kpi__icon ax-kpi__icon--c3">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12"/><path d="M16 3v4"/><path d="M8 3v4"/><path d="M4 11h16"/><path d="M8 15h2v2h-2z"/></svg>
+                </span>
+                <span class="cr-kpi__label">Average days on market</span>
+              </div>
+              <div class="cr-kpi__value ax-num">—</div>
+              <div class="cr-kpi__change">
+                <span class="cr-kpi__cmp">No reliable source yet</span>
+              </div>
+              <p class="cr-kpi__src">Awaiting listings data</p>
+            </div>
+          </div>
+
+          <div class="ax-card ax-kpi cr-kpi ax-col--3" role="region" aria-label="Average price per square foot £360, M16 0 sector median">
+            <div class="cr-kpi__body">
+              <div class="cr-kpi__head">
+                <span class="ax-kpi__icon ax-kpi__icon--c4">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3l4 4l-14 14l-4 -4z"/><path d="M16 7l-1.5 -1.5"/><path d="M13 10l-1.5 -1.5"/><path d="M10 13l-1.5 -1.5"/><path d="M7 16l-1.5 -1.5"/></svg>
+                </span>
+                <span class="cr-kpi__label">Average £ / sq ft</span>
+              </div>
+              <div class="cr-kpi__value ax-num">£360</div>
+              <div class="cr-kpi__change">
+                <span class="cr-kpi__cmp">M16 0 sector median</span>
+              </div>
+              <p class="cr-kpi__src">£3,880 / m² · housemetric</p>
+            </div>
+          </div>
+
+          <!-- ───── PRICE TREND (8) + AREA SCORECARD (4) ─────
+               "All" = M16 yearly average (HM Land Registry). There is no yearly
+               series per property type, so the type filters show a summary. -->
+          <section class="ax-card ax-card--chart ax-col--8" role="region" aria-label="Property value and growth trend"
+            x-data="{
+              type: 'all',
+              types: {
+                detached: { label: 'Detached', avg3: '£481,201', n3: 37,  median: '£608,500', sales: 2,  low: true },
+                semi:     { label: 'Semi',     avg3: '£427,964', n3: 246, median: '£415,000', sales: 55, low: false },
+                flat:     { label: 'Flat',     avg3: '£172,921', n3: 357, median: '£173,250', sales: 62, low: false }
+              },
+              get sel(){ return this.types[this.type]; }
+            }">
+            <div class="ax-card__header">
+              <div class="ax-card__titles">
+                <span class="ax-card__eyebrow">Market</span>
+                <h2 class="ax-card__title">Property Value Trend</h2>
+                <p class="ax-card__subtitle">Average sold price vs. annual growth — M16, 2016–2025</p>
+              </div>
+              <div class="ax-card__actions">
+                <div class="ax-btn-group ax-btn-group--segmented" role="radiogroup" aria-label="Property type">
+                  <button type="button" class="ax-btn ax-btn--sm" role="radio" :class="{ 'is-selected': type==='all' }" :aria-checked="type==='all'" @click="type='all'">All</button>
+                  <button type="button" class="ax-btn ax-btn--sm" role="radio" :class="{ 'is-selected': type==='detached' }" :aria-checked="type==='detached'" @click="type='detached'">Detached</button>
+                  <button type="button" class="ax-btn ax-btn--sm" role="radio" :class="{ 'is-selected': type==='semi' }" :aria-checked="type==='semi'" @click="type='semi'">Semi</button>
+                  <button type="button" class="ax-btn ax-btn--sm" role="radio" :class="{ 'is-selected': type==='flat' }" :aria-checked="type==='flat'" @click="type='flat'">Flat</button>
+                </div>
+              </div>
+            </div>
+            <div class="ax-card__body" style="padding-top:0;">
+              <div x-show="type==='all'">
+                <div class="ax-cluster" style="gap:var(--ax-space-5);margin-block-end:var(--ax-space-3);">
+                  <span class="ax-cluster" style="gap:var(--ax-space-2);"><i style="width:9px;height:9px;border-radius:3px;background:var(--ax-accent);"></i><small style="color:var(--ax-text-muted);font-size:var(--ax-text-sm);">Average value</small></span>
+                  <span class="ax-cluster" style="gap:var(--ax-space-2);"><i style="width:9px;height:9px;border-radius:3px;background:var(--ax-viz-cyan);"></i><small style="color:var(--ax-text-muted);font-size:var(--ax-text-sm);">Annual growth %</small></span>
+                </div>
+                <div id="cr-value-trend" role="img" aria-label="Line chart of M16 average sold price from £176,750 in 2016 to £322,464 in 2025, with annual growth columns from -11.5% to +45.2%"></div>
+              </div>
+              <div class="cr-type-sum" x-show="type!=='all'" x-cloak>
+                <div class="cr-type-sum__grid">
+                  <div class="cr-type-sum__stat">
+                    <span class="cr-type-sum__label">Last 3 years average</span>
+                    <b class="cr-type-sum__value ax-num" x-text="sel && sel.avg3"></b>
+                    <small class="cr-type-sum__meta" x-text="sel && `${sel.n3} sales`"></small>
+                  </div>
+                  <div class="cr-type-sum__stat">
+                    <span class="cr-type-sum__label">Last 12 months median</span>
+                    <b class="cr-type-sum__value ax-num" x-text="sel && sel.median"></b>
+                    <small class="cr-type-sum__meta" x-text="sel && `${sel.label} · M16`"></small>
+                  </div>
+                  <div class="cr-type-sum__stat">
+                    <span class="cr-type-sum__label">Sales in 12 months</span>
+                    <b class="cr-type-sum__value ax-num" x-text="sel && sel.sales"></b>
+                    <small class="cr-type-sum__meta">
+                      <span class="ax-badge ax-badge--soft ax-badge--warning ax-badge--sm" x-show="sel && sel.low">Low confidence</span>
+                      <span x-show="sel && !sel.low">to 31 Mar 2026</span>
+                    </small>
+                  </div>
+                </div>
+                <p class="cr-type-sum__hint">No yearly series is published per property type, so a summary is shown instead of the chart.</p>
+              </div>
+              <p class="cr-card-note">Raw average; may fluctuate with property mix. Source: HM Land Registry.</p>
+            </div>
+          </section>
+
+          <section class="ax-card ax-col--4" role="region" aria-label="Area scorecard, indicative overall score 74 out of 100">
+            <div class="ax-card__header">
+              <div class="ax-card__titles">
+                <span class="ax-card__eyebrow">Neighbourhood</span>
+                <h2 class="ax-card__title">Area Scorecard</h2>
+                <p class="ax-card__subtitle"><span class="ax-badge ax-badge--soft ax-badge--neutral ax-badge--pill ax-badge--sm">Indicative</span></p>
+              </div>
+              <span class="ax-badge ax-badge--soft ax-badge--success ax-badge--pill"><span class="ax-badge__dot"></span>74 / 100</span>
+            </div>
+            <div class="ax-card__body" style="padding-top:0;">
+              <div id="cr-score-radar" role="img" aria-label="Radar chart of indicative area scores: safety 55, schools 80, transport 88, air quality 50, flood safety 85, ground stability 85"></div>
+              <p style="font-size:var(--ax-text-sm);color:var(--ax-text-muted);margin:0;">Derived from the data on this page, not an official score. Higher is better on every axis.</p>
+            </div>
+          </section>
+
+          <!-- ───── RATINGS ROW: crime · schools · transport ───── -->
+          <!-- Crime rating — GMP publishes no street-level data on police.uk, so the
+               category rates stay TBD; only the ONS borough figure is verified. -->
+          <section class="ax-card ax-col--4" role="region" aria-label="Crime rating: Trafford violent crime 27 per 1,000, below average" data-cr-todo="crime-categories">
+            <div class="ax-card__header">
+              <div class="ax-card__titles">
+                <h2 class="ax-card__title">Crime Rating</h2>
+                <p class="ax-card__subtitle">Trafford borough · year to Sep 2025</p>
+              </div>
+              <span class="ax-badge ax-badge--soft ax-badge--success ax-badge--pill">Below average</span>
+            </div>
+            <div class="ax-card__body" style="padding-top:0;">
+              <div class="ax-cluster" style="justify-content:space-between;align-items:flex-end;margin-bottom:var(--ax-space-4);">
+                <div>
+                  <div class="ax-num" style="font-family:var(--ax-font-display);font-size:var(--ax-text-3xl);font-weight:700;line-height:1;color:var(--ax-text-strong);">27</div>
+                  <small style="color:var(--ax-text-muted);font-size:var(--ax-text-sm);">violent crimes / 1,000 · Manchester 52</small>
+                </div>
+                <span class="ax-badge ax-badge--soft ax-badge--neutral ax-badge--pill ax-badge--sm">ONS</span>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:var(--ax-space-3);">
+                <div>
+                  <div class="ax-cluster" style="justify-content:space-between;margin-bottom:5px;"><span style="font-size:var(--ax-text-sm);color:var(--ax-text);">Anti-social behaviour</span><b class="ax-num" style="color:var(--ax-text-subtle);font-size:var(--ax-text-sm);">—</b></div>
+                  <div class="ax-progress ax-progress--sm"><div class="ax-progress__track"><div class="ax-progress__fill" style="width:0%;background:var(--ax-viz-violet);"></div></div></div>
+                </div>
+                <div>
+                  <div class="ax-cluster" style="justify-content:space-between;margin-bottom:5px;"><span style="font-size:var(--ax-text-sm);color:var(--ax-text);">Violence &amp; sexual offences</span><b class="ax-num" style="color:var(--ax-text-subtle);font-size:var(--ax-text-sm);">—</b></div>
+                  <div class="ax-progress ax-progress--sm"><div class="ax-progress__track"><div class="ax-progress__fill" style="width:0%;background:var(--ax-viz-violet);"></div></div></div>
+                </div>
+                <div>
+                  <div class="ax-cluster" style="justify-content:space-between;margin-bottom:5px;"><span style="font-size:var(--ax-text-sm);color:var(--ax-text);">Burglary</span><b class="ax-num" style="color:var(--ax-text-subtle);font-size:var(--ax-text-sm);">—</b></div>
+                  <div class="ax-progress ax-progress--sm"><div class="ax-progress__track"><div class="ax-progress__fill" style="width:0%;background:var(--ax-viz-violet);"></div></div></div>
+                </div>
+                <div>
+                  <div class="ax-cluster" style="justify-content:space-between;margin-bottom:5px;"><span style="font-size:var(--ax-text-sm);color:var(--ax-text);">Vehicle crime</span><b class="ax-num" style="color:var(--ax-text-subtle);font-size:var(--ax-text-sm);">—</b></div>
+                  <div class="ax-progress ax-progress--sm"><div class="ax-progress__track"><div class="ax-progress__fill" style="width:0%;background:var(--ax-viz-violet);"></div></div></div>
+                </div>
+              </div>
+              <p class="cr-card-note">Neighbourhood category rates aren't published for Greater Manchester yet.</p>
+              <!-- violent crime: Trafford vs Manchester (ONS) — bar chart rendered by area-radar.js -->
+              <div class="cr-crime-chart">
+                <div class="cr-flood-chart__head">
+                  <span class="cr-radon__label">Violent crime vs Manchester</span>
+                  <span class="cr-crime-chart__delta"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6l6 -6"/></svg>48% lower</span>
+                </div>
+                <div id="cr-crime-chart" role="img" aria-label="Bar chart of violent crimes per 1,000 residents: Trafford 27, Manchester 52. Trafford is 48% lower."></div>
+                <p class="cr-crime-chart__unit">Violent crimes per 1,000 residents · ONS</p>
+              </div>
+            </div>
+          </section>
+
+          <!-- School rating — badge 8.0 = mean of Outstanding (10) / Good (7.5), OTCA excluded. -->
+          <section class="ax-card ax-col--4" role="region" aria-label="School rating 8.0 out of 10">
+            <div class="ax-card__header">
+              <div class="ax-card__titles">
+                <h2 class="ax-card__title">School Rating</h2>
+                <p class="ax-card__subtitle">Nearest schools · Ofsted</p>
+              </div>
+              <span class="ax-badge ax-badge--soft ax-badge--success ax-badge--pill">8.0 / 10</span>
+            </div>
+            <div class="ax-card__body" style="padding-top:0;">
+              <ul class="ax-list ax-list--compact">
+                <li class="ax-list__row" style="padding-inline:0;">
+                  <span class="ax-list__leading"><span class="cr-row-ico" style="--c:var(--ax-viz-amber)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 18v-6a6 6 0 0 1 6 -6h2a6 6 0 0 1 6 6v6a3 3 0 0 1 -3 3h-8a3 3 0 0 1 -3 -3z"/><path d="M10 6v-1a2 2 0 1 1 4 0v1"/><path d="M9 21v-4a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v4"/><path d="M11 10h2"/></svg></span></span>
+                  <span class="ax-list__content"><span class="ax-list__title">Seymour Park Community Primary</span><span class="ax-list__meta">Primary · ≈1.0 mi · Dec 2023</span></span>
+                  <span class="ax-list__trailing"><span class="ax-badge ax-badge--soft ax-badge--success ax-badge--sm">Outstanding</span></span>
+                </li>
+                <li class="ax-list__row" style="padding-inline:0;" data-cr-todo="otca-ofsted">
+                  <span class="ax-list__leading"><span class="cr-row-ico" style="--c:var(--ax-viz-amber)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 18v-6a6 6 0 0 1 6 -6h2a6 6 0 0 1 6 6v6a3 3 0 0 1 -3 3h-8a3 3 0 0 1 -3 -3z"/><path d="M10 6v-1a2 2 0 1 1 4 0v1"/><path d="M9 21v-4a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v4"/><path d="M11 10h2"/></svg></span></span>
+                  <span class="ax-list__content"><span class="ax-list__title">Old Trafford Community Academy</span><span class="ax-list__meta">Primary · ≈1.1 mi · Oct 2024</span></span>
+                  <span class="ax-list__trailing"><span class="ax-badge ax-badge--soft ax-badge--neutral ax-badge--sm">No grade</span></span>
+                </li>
+                <li class="ax-list__row" style="padding-inline:0;">
+                  <span class="ax-list__leading"><span class="cr-row-ico" style="--c:var(--ax-viz-violet)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 9l-10 -4l-10 4l10 4l10 -4v6"/><path d="M6 10.6v5.4a6 3 0 0 0 12 0v-5.4"/></svg></span></span>
+                  <span class="ax-list__content"><span class="ax-list__title">Stretford High School</span><span class="ax-list__meta">Secondary · ≈0.9 mi · Dec 2019</span></span>
+                  <span class="ax-list__trailing"><span class="ax-badge ax-badge--soft ax-badge--info ax-badge--sm">Good</span></span>
+                </li>
+                <li class="ax-list__row" style="padding-inline:0;">
+                  <span class="ax-list__leading"><span class="cr-row-ico" style="--c:var(--ax-viz-cyan)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 19a9 9 0 0 1 9 0a9 9 0 0 1 9 0"/><path d="M3 6a9 9 0 0 1 9 0a9 9 0 0 1 9 0"/><path d="M3 6l0 13"/><path d="M12 6l0 13"/><path d="M21 6l0 13"/></svg></span></span>
+                  <span class="ax-list__content"><span class="ax-list__title">Stretford Grammar School</span><span class="ax-list__meta">Secondary · Grammar · ≈1.2 mi</span></span>
+                  <span class="ax-list__trailing"><span class="ax-badge ax-badge--soft ax-badge--info ax-badge--sm">Good</span></span>
+                </li>
+                <li class="ax-list__row" style="padding-inline:0;border-bottom:0;">
+                  <span class="ax-list__leading"><span class="cr-row-ico" style="--c:var(--ax-viz-violet)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 9l-10 -4l-10 4l10 4l10 -4v6"/><path d="M6 10.6v5.4a6 3 0 0 0 12 0v-5.4"/></svg></span></span>
+                  <span class="ax-list__content"><span class="ax-list__title">Trinity CofE High School</span><span class="ax-list__meta">Secondary · 11–19 · ≈1.8 mi · Nov 2023</span></span>
+                  <span class="ax-list__trailing"><span class="ax-badge ax-badge--soft ax-badge--info ax-badge--sm">Good</span></span>
+                </li>
+              </ul>
+              <p class="cr-card-note">Inspections since Sep 2024 no longer give a one-word overall grade.</p>
+              <!-- Ofsted grade mix of the nearest schools — donut rendered by area-radar.js -->
+              <div class="cr-school-chart">
+                <div class="cr-flood-chart__head">
+                  <span class="cr-radon__label">Ofsted mix</span>
+                  <span class="cr-flood-chart__hint">5 nearest schools</span>
+                </div>
+                <div class="cr-school-chart__row">
+                  <div id="cr-school-chart" role="img" aria-label="Donut chart of Ofsted grades for the 5 nearest schools: 1 outstanding, 3 good, 1 with no one-word grade."></div>
+                  <ul class="cr-school-chart__legend">
+                    <li style="--c:var(--ax-success-500)"><span>Outstanding</span><b>1</b></li>
+                    <li style="--c:var(--ax-info-500)"><span>Good</span><b>3</b></li>
+                    <li style="--c:var(--ax-neutral-400)"><span>No grade</span><b>1</b></li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Transport score (derived) -->
+          <section class="ax-card ax-col--4" role="region" aria-label="Transport score 88 out of 100" data-cr-todo="bus-stops">
+            <div class="ax-card__header">
+              <div class="ax-card__titles">
+                <h2 class="ax-card__title">Transport Score</h2>
+                <p class="ax-card__subtitle">Metrolink, bus &amp; road connectivity</p>
+              </div>
+            </div>
+            <div class="ax-card__body" style="padding-top:0;">
+              <div class="ax-gauge">
+                <div class="ax-gauge__chart" id="cr-transport-gauge" role="img" aria-label="Radial gauge: transport score 88 out of 100"></div>
+                <div class="ax-gauge__rows">
+                  <div class="ax-gauge__row">
+                    <span class="ax-gauge__row-label">Old Trafford Metrolink · 0.5 mi</span>
+                    <span class="ax-gauge__row-value ax-num">≈10 min walk</span>
+                  </div>
+                  <div class="ax-gauge__row">
+                    <span class="ax-gauge__row-label">St Peter's Square (city centre)</span>
+                    <span class="ax-gauge__row-value ax-num">≈10 min tram</span>
+                  </div>
+                  <div class="ax-gauge__row">
+                    <span class="ax-gauge__row-label">Bus stops within 400 m</span>
+                    <span class="ax-gauge__row-value ax-num">—</span>
+                  </div>
+                  <div class="ax-gauge__row">
+                    <span class="ax-gauge__row-label">M60 J7 (Stretford)</span>
+                    <span class="ax-gauge__row-value ax-num">≈2.3 mi</span>
+                  </div>
+                </div>
+              </div>
+              <p class="cr-card-note">Altrincham line, trams every 6–12 min; Trafford Bar stop is also nearby. Manchester United Football Ground station opens on matchdays only.</p>
+              <!-- door-to-city-centre journey — stacked bar rendered by area-radar.js -->
+              <div class="cr-journey-chart">
+                <div class="cr-flood-chart__head">
+                  <span class="cr-radon__label">Journey to city centre</span>
+                  <span class="cr-journey-chart__total">≈20 min</span>
+                </div>
+                <div id="cr-journey-chart" role="img" aria-label="Stacked bar: about 10 minutes walking to Old Trafford Metrolink plus about 10 minutes by tram to St Peter's Square, about 20 minutes in total."></div>
+                <p class="cr-crime-chart__unit">Old Trafford stop → St Peter's Square · trams every 6–12 min</p>
+              </div>
+            </div>
+          </section>
+
+          <!-- ───── ENVIRONMENTAL RISK ROW: flood · mining · air quality ───── -->
+          <!-- Flood risk -->
+          <section class="ax-card ax-col--4" role="region" aria-label="Flood risk: low" data-cr-todo="reservoirs">
+            <div class="ax-card__header">
+              <div class="ax-card__titles">
+                <h2 class="ax-card__title">Flood Risk</h2>
+                <p class="ax-card__subtitle">Environment Agency long-term risk</p>
+              </div>
+              <span class="ax-badge ax-badge--soft ax-badge--success ax-badge--pill"><span class="ax-badge__dot"></span>Low</span>
+            </div>
+            <div class="ax-card__body" style="padding-top:0;">
+              <ul class="ax-list ax-list--compact">
+                <li class="ax-list__row" style="padding-inline:0;">
+                  <span class="ax-list__leading"><span class="cr-row-ico" style="--c:var(--ax-viz-cyan)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7c3 -2 6 -2 9 0s6 2 9 0"/><path d="M3 12c3 -2 6 -2 9 0s6 2 9 0"/><path d="M3 17c3 -2 6 -2 9 0s6 2 9 0"/></svg></span></span>
+                  <span class="ax-list__content"><span class="ax-list__title">Rivers &amp; sea</span><span class="ax-list__meta">Mostly outside EA risk areas</span></span>
+                  <span class="ax-list__trailing"><span class="ax-badge ax-badge--soft ax-badge--success ax-badge--sm">Very low</span></span>
+                </li>
+                <li class="ax-list__row" style="padding-inline:0;">
+                  <span class="ax-list__leading"><span class="cr-row-ico" style="--c:var(--ax-viz-violet)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 18a4.6 4.4 0 0 1 0 -9a5 4.5 0 0 1 11 2h1a3.5 3.5 0 0 1 0 7"/><path d="M11 13v2m0 3v2m4 -5v2m0 3v2"/></svg></span></span>
+                  <span class="ax-list__content"><span class="ax-list__title">Surface water</span><span class="ax-list__meta">Varies by street; check property</span></span>
+                  <span class="ax-list__trailing"><span class="ax-badge ax-badge--soft ax-badge--success ax-badge--sm">Low</span></span>
+                </li>
+                <li class="ax-list__row" style="padding-inline:0;">
+                  <span class="ax-list__leading"><span class="cr-row-ico" style="--c:var(--ax-accent)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7.502 19.423c2.602 2.105 6.395 2.105 8.996 0c2.602 -2.105 3.262 -5.708 1.566 -8.546l-4.89 -7.26c-.42 -.625 -1.287 -.803 -1.936 -.397a1.376 1.376 0 0 0 -.41 .397l-4.893 7.26c-1.695 2.838 -1.035 6.441 1.567 8.546z"/></svg></span></span>
+                  <span class="ax-list__content"><span class="ax-list__title">Groundwater</span><span class="ax-list__meta">Unlikely in this area</span></span>
+                  <span class="ax-list__trailing"><span class="ax-badge ax-badge--soft ax-badge--success ax-badge--sm">Low</span></span>
+                </li>
+                <li class="ax-list__row" style="padding-inline:0;border-bottom:0;">
+                  <span class="ax-list__leading"><span class="cr-row-ico" style="--c:var(--ax-viz-amber)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v16h-6z"/><path d="M3 9c1.5 -1 3 -1 4.5 0s3 1 4.5 0"/><path d="M3 14c1.5 -1 3 -1 4.5 0s3 1 4.5 0"/><path d="M3 20h18"/></svg></span></span>
+                  <span class="ax-list__content"><span class="ax-list__title">Reservoirs</span><span class="ax-list__meta">Verify on the EA map</span></span>
+                  <span class="ax-list__trailing" style="color:var(--ax-text-subtle);">—</span>
+                </li>
+              </ul>
+              <p class="cr-card-note">Manchester Ship Canal is nearby; canal flooding is modelled in the Manchester–Salford–Trafford SFRA.</p>
+              <!-- EA long-term risk by source — bar chart (rendered by area-radar.js) -->
+              <div class="cr-flood-chart">
+                <div class="cr-flood-chart__head">
+                  <span class="cr-radon__label">Risk by source</span>
+                  <span class="cr-flood-chart__hint">EA level</span>
+                </div>
+                <div id="cr-flood-chart" role="img" aria-label="Bar chart of flood risk by source: rivers and sea very low, surface water low, groundwater low. Reservoirs not yet verified."></div>
+              </div>
+              <a class="cr-radon__link cr-flood__link" href="https://check-long-term-flood-risk.service.gov.uk/postcode" target="_blank" rel="noopener">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7l6 -3l6 3l6 -3v13l-6 3l-6 -3l-6 3v-13"/><path d="M9 4v13"/><path d="M15 7v13"/></svg>
+                  Check long-term flood risk for a postcode
+                  <svg class="cr-radon__ext" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6h-6a2 2 0 0 0 -2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-6"/><path d="M11 13l9 -9"/><path d="M15 4h5v5"/></svg>
+                </a>
+            </div>
+          </section>
+
+          <!-- Mining risk -->
+          <section class="ax-card ax-col--4" role="region" aria-label="Mining risk: low, to be verified" data-cr-todo="coal-authority">
+            <div class="ax-card__header">
+              <div class="ax-card__titles">
+                <h2 class="ax-card__title">Mining Risk</h2>
+                <p class="ax-card__subtitle">Coal Authority &amp; ground stability</p>
+              </div>
+              <span class="ax-badge ax-badge--soft ax-badge--success ax-badge--pill"><span class="ax-badge__dot"></span>Low</span>
+            </div>
+            <div class="ax-card__body" style="padding-top:0;">
+              <div class="ax-alert ax-alert--info ax-alert--inline" role="status" style="margin-bottom:var(--ax-space-4);">
+                <span class="ax-alert__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0"/><path d="M12 9h.01"/><path d="M11 12h1v4h1"/></svg></span>
+                <div class="ax-alert__content"><p class="ax-alert__message">Check the Coal Authority map before purchase. Radon potential is the lowest class.</p></div>
+              </div>
+              <ul class="ax-list ax-list--compact">
+                <li class="ax-list__row" style="padding-inline:0;">
+                  <span class="ax-list__content"><span class="ax-list__title">Coal mining reporting area</span></span>
+                  <span class="ax-list__trailing" style="color:var(--ax-text-subtle);">—</span>
+                </li>
+                <li class="ax-list__row" style="padding-inline:0;">
+                  <span class="ax-list__content"><span class="ax-list__title">Recorded mine entries (1 km)</span></span>
+                  <span class="ax-list__trailing ax-num" style="color:var(--ax-text-subtle);">—</span>
+                </li>
+                <li class="ax-list__row" style="padding-inline:0;">
+                  <span class="ax-list__content"><span class="ax-list__title">Radon</span><span class="ax-list__meta">&lt;1% of homes above action level</span></span>
+                  <span class="ax-list__trailing"><span class="ax-badge ax-badge--soft ax-badge--success ax-badge--sm">Class 1 of 6</span></span>
+                </li>
+                <li class="ax-list__row" style="padding-inline:0;border-bottom:0;">
+                  <span class="ax-list__content"><span class="ax-list__title">Natural ground subsidence</span></span>
+                  <span class="ax-list__trailing"><span class="ax-badge ax-badge--soft ax-badge--success ax-badge--sm">Low</span></span>
+                </li>
+              </ul>
+              <!-- radon potential scale (UKHSA / BGS classes 1–6) + official coal check -->
+              <div class="cr-radon" role="img" aria-label="Radon potential class 1 of 6, the lowest class">
+                <div class="cr-radon__head">
+                  <span class="cr-radon__label">Radon potential</span>
+                  <span class="cr-radon__value">Class <b>1</b> / 6</span>
+                </div>
+                <div class="cr-radon__scale" aria-hidden="true">
+                  <span class="is-current"><i>1</i></span><span><i>2</i></span><span><i>3</i></span><span><i>4</i></span><span><i>5</i></span><span><i>6</i></span>
+                </div>
+                <div class="cr-radon__ends" aria-hidden="true"><span>&lt;1% homes</span><span>30%+ homes</span></div>
+                <a class="cr-radon__link" href="https://www.gov.uk/check-if-property-is-affected-by-coal-mining" target="_blank" rel="noopener">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7l6 -3l6 3l6 -3v13l-6 3l-6 -3l-6 3v-13"/><path d="M9 4v13"/><path d="M15 7v13"/></svg>
+                  Check coal mining for a property
+                  <svg class="cr-radon__ext" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6h-6a2 2 0 0 0 -2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-6"/><path d="M11 13l9 -9"/><path d="M15 4h5v5"/></svg>
+                </a>
+              </div>
+            </div>
+          </section>
+
+          <!-- Air quality — annual roadside NO₂ (A56 AQMA); PM2.5 / NO₂ / PM10 bars are
+               filled live from Open-Meteo by area-radar.js (badge flips to "Live"). -->
+          <section class="ax-card ax-col--4" role="region" aria-label="Air quality: roadside NO2 annual mean about 30 micrograms per cubic metre, legal limit 40" data-cr-air>
+            <div class="ax-card__header">
+              <div class="ax-card__titles">
+                <h2 class="ax-card__title">Air Quality</h2>
+                <p class="ax-card__subtitle">A56 Chester Road AQMA</p>
+              </div>
+              <span class="ax-badge ax-badge--soft ax-badge--neutral ax-badge--pill" data-cr-air-badge><span class="ax-badge__dot"></span><span data-cr-air-badge-text>Annual</span></span>
+            </div>
+            <div class="ax-card__body" style="padding-top:0;">
+              <div class="ax-cluster" style="justify-content:space-between;align-items:flex-end;margin-bottom:var(--ax-space-4);">
+                <div>
+                  <div class="ax-num" style="font-family:var(--ax-font-display);font-size:var(--ax-text-3xl);font-weight:700;line-height:1;color:var(--ax-text-strong);">~30 <small style="font-size:var(--ax-text-base);color:var(--ax-text-muted);font-weight:var(--ax-weight-medium);">µg/m³</small></div>
+                  <small style="color:var(--ax-text-muted);font-size:var(--ax-text-sm);">Roadside NO₂ annual mean · limit 40</small>
+                </div>
+                <span class="ax-badge ax-badge--soft ax-badge--warning ax-badge--pill ax-badge--sm">AQMA</span>
+              </div>
+              <p class="cr-air__head">Now <span data-cr-air-time></span></p>
+              <div style="display:flex;flex-direction:column;gap:var(--ax-space-3);">
+                <div>
+                  <div class="ax-cluster" style="justify-content:space-between;margin-bottom:5px;"><span style="font-size:var(--ax-text-sm);color:var(--ax-text);">PM2.5</span><b class="ax-num" style="color:var(--ax-text-strong);font-size:var(--ax-text-sm);" data-cr-air-val="pm2_5">—</b></div>
+                  <div class="ax-progress ax-progress--sm"><div class="ax-progress__track"><div class="ax-progress__fill" style="width:0%;background:var(--ax-viz-emerald);" data-cr-air-bar="pm2_5"></div></div></div>
+                </div>
+                <div>
+                  <div class="ax-cluster" style="justify-content:space-between;margin-bottom:5px;"><span style="font-size:var(--ax-text-sm);color:var(--ax-text);">NO₂</span><b class="ax-num" style="color:var(--ax-text-strong);font-size:var(--ax-text-sm);" data-cr-air-val="nitrogen_dioxide">—</b></div>
+                  <div class="ax-progress ax-progress--sm"><div class="ax-progress__track"><div class="ax-progress__fill" style="width:0%;background:var(--ax-viz-amber);" data-cr-air-bar="nitrogen_dioxide"></div></div></div>
+                </div>
+                <div>
+                  <div class="ax-cluster" style="justify-content:space-between;margin-bottom:5px;"><span style="font-size:var(--ax-text-sm);color:var(--ax-text);">PM10</span><b class="ax-num" style="color:var(--ax-text-strong);font-size:var(--ax-text-sm);" data-cr-air-val="pm10">—</b></div>
+                  <div class="ax-progress ax-progress--sm"><div class="ax-progress__track"><div class="ax-progress__fill" style="width:0%;background:var(--ax-viz-emerald);" data-cr-air-bar="pm10"></div></div></div>
+                </div>
+              </div>
+              <!-- live European AQI gauge (filled by area-radar.js) -->
+              <div class="cr-aqi">
+                <div class="cr-aqi__chart" id="cr-air-gauge" role="img" aria-label="European air quality index gauge"></div>
+                <div class="cr-aqi__meta">
+                  <span class="cr-aqi__label">European AQI</span>
+                  <b class="cr-aqi__band" data-cr-aqi-band>—</b>
+                  <ol class="cr-aqi__scale" aria-label="Scale">
+                    <li style="--c:var(--ax-viz-emerald)">Good</li>
+                    <li style="--c:var(--ax-viz-cyan)">Fair</li>
+                    <li style="--c:var(--ax-viz-amber)">Moderate</li>
+                    <li style="--c:var(--ax-danger-500)">Poor+</li>
+                  </ol>
+                </div>
+              </div>
+              <p class="cr-card-note">A Clean Air GM tube by the stadium (CAP_TRAF_021) missed its 2022 target.</p>
+            </div>
+          </section>
+
+          <!-- ───── PLANNING ROW: developments (8) + conservation (4) ───── -->
+          <section class="ax-card ax-col--8" role="region" aria-label="Major developments in the area">
+            <div class="ax-card__header">
+              <div class="ax-card__titles">
+                <span class="ax-card__eyebrow">Planning</span>
+                <h2 class="ax-card__title">Major Developments in the Area</h2>
+                <p class="ax-card__subtitle">Schemes within 2 miles</p>
+              </div>
+              <a class="ax-btn ax-btn--link" href="https://www.trafford.gov.uk/planning-and-building-control/planning-and-building-control.aspx" target="_blank" rel="noopener">View all</a>
+            </div>
+            <div class="ax-table-wrap">
+              <table class="ax-table ax-table--hover">
+                <thead class="ax-table__head">
+                  <tr>
+                    <th class="ax-table__th" scope="col">Scheme</th>
+                    <th class="ax-table__th" scope="col">Type</th>
+                    <th class="ax-table__th ax-table__th--num" scope="col">Units</th>
+                    <th class="ax-table__th ax-table__th--num" scope="col">Distance</th>
+                    <th class="ax-table__th" scope="col">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="ax-table__row">
+                    <td class="ax-table__td"><div style="font-weight:var(--ax-weight-medium);color:var(--ax-text-strong);">New Manchester United Stadium (100,000 seats)</div><div style="font-size:var(--ax-text-xs);color:var(--ax-text-subtle);">Land secured Jun 2026</div></td>
+                    <td class="ax-table__td" style="color:var(--ax-text-muted);">Stadium</td>
+                    <td class="ax-table__td ax-table__td--num" style="color:var(--ax-text-subtle);">—</td>
+                    <td class="ax-table__td ax-table__td--num" style="color:var(--ax-text-muted);">≈0.2 mi</td>
+                    <td class="ax-table__td"><span class="ax-badge ax-badge--soft ax-badge--warning ax-badge--sm">Consultation</span></td>
+                  </tr>
+                  <tr class="ax-table__row">
+                    <td class="ax-table__td"><div style="font-weight:var(--ax-weight-medium);color:var(--ax-text-strong);">Old Trafford Regeneration (OTR MDC)</div><div style="font-size:var(--ax-text-xs);color:var(--ax-text-subtle);">370-acre district · Chair Lord Coe</div></td>
+                    <td class="ax-table__td" style="color:var(--ax-text-muted);">Mixed use</td>
+                    <td class="ax-table__td ax-table__td--num">~15,000</td>
+                    <td class="ax-table__td ax-table__td--num" style="color:var(--ax-text-muted);">0 mi</td>
+                    <td class="ax-table__td"><span class="ax-badge ax-badge--soft ax-badge--info ax-badge--sm">MDC launched Jan 2026</span></td>
+                  </tr>
+                  <tr class="ax-table__row">
+                    <td class="ax-table__td"><div style="font-weight:var(--ax-weight-medium);color:var(--ax-text-strong);">Trafford Wharfside Masterplan</div><div style="font-size:var(--ax-text-xs);color:var(--ax-text-subtle);">Published Jul 2026</div></td>
+                    <td class="ax-table__td" style="color:var(--ax-text-muted);">Mixed use</td>
+                    <td class="ax-table__td ax-table__td--num" style="color:var(--ax-text-subtle);">—</td>
+                    <td class="ax-table__td ax-table__td--num" style="color:var(--ax-text-muted);">≈0.3 mi</td>
+                    <td class="ax-table__td"><span class="ax-badge ax-badge--soft ax-badge--info ax-badge--sm">Published</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <!-- headline figures + 2026 milestones (OTR MDC, club, Trafford Council) -->
+            <div class="ax-card__body cr-dev">
+              <div class="cr-dev__stats">
+                <div class="cr-dev__stat" style="--c:var(--ax-viz-violet)">
+                  <span class="cr-row-ico" style="--c:var(--ax-viz-violet)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7a8 2 0 1 0 16 0a8 2 0 1 0 -16 0"/><path d="M4 7v7c0 1.105 3.582 2 8 2s8 -.895 8 -2v-7"/><path d="M15 16v4c0 .552 -1.343 1 -3 1s-3 -.448 -3 -1v-4"/></svg></span>
+                  <b class="ax-num">100,000</b><small>stadium seats</small>
+                </div>
+                <div class="cr-dev__stat">
+                  <span class="cr-row-ico" style="--c:var(--ax-accent)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l-2 0l9 -9l9 9l-2 0"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7"/><path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6"/></svg></span>
+                  <b class="ax-num">~15,000</b><small>new homes</small>
+                </div>
+                <div class="cr-dev__stat">
+                  <span class="cr-row-ico" style="--c:var(--ax-viz-cyan)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7m0 2a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v9a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2z"/><path d="M8 7v-2a2 2 0 0 1 2 -2h4a2 2 0 0 1 2 2v2"/><path d="M12 12l0 .01"/><path d="M3 13a20 20 0 0 0 18 0"/></svg></span>
+                  <b class="ax-num">48,000</b><small>local jobs</small>
+                </div>
+                <div class="cr-dev__stat">
+                  <span class="cr-row-ico" style="--c:var(--ax-viz-amber)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7l6 -3l6 3l6 -3v13l-6 3l-6 -3l-6 3v-13"/><path d="M9 4v13"/><path d="M15 7v13"/></svg></span>
+                  <b class="ax-num">370</b><small>acre district</small>
+                </div>
+              </div>
+
+              <div class="cr-dev__timeline">
+                <div class="cr-flood-chart__head">
+                  <span class="cr-radon__label">2026 milestones</span>
+                  <span class="cr-flood-chart__hint">Old Trafford Regeneration</span>
+                </div>
+                <ol class="cr-tl" aria-label="2026 milestones">
+                  <li class="cr-tl__item is-done" style="--c:var(--ax-info-500)"><span class="cr-tl__date">Jan</span><span class="cr-tl__title">MDC launched</span><span class="cr-tl__meta">Chair Lord Coe</span></li>
+                  <li class="cr-tl__item is-done" style="--c:var(--ax-accent)"><span class="cr-tl__date">Jun</span><span class="cr-tl__title">Stadium land secured</span><span class="cr-tl__meta">100,000 seats</span></li>
+                  <li class="cr-tl__item is-done" style="--c:var(--ax-viz-violet)"><span class="cr-tl__date">Jul</span><span class="cr-tl__title">Wharfside masterplan</span><span class="cr-tl__meta">Published</span></li>
+                  <li class="cr-tl__item is-now" style="--c:var(--ax-viz-amber)"><span class="cr-tl__date">Sep</span><span class="cr-tl__title">Timescale "uncertain"</span><span class="cr-tl__meta">No opening date yet</span></li>
+                </ol>
+              </div>
+            </div>
+          </section>
+
+          <!-- Conservation area status -->
+          <section class="ax-card ax-col--4" role="region" aria-label="Conservation area status: outside a conservation area" data-cr-todo="tree-preservation-orders">
+            <div class="ax-card__header">
+              <div class="ax-card__titles">
+                <h2 class="ax-card__title">Conservation Area Status</h2>
+                <p class="ax-card__subtitle">Heritage &amp; planning constraints</p>
+              </div>
+            </div>
+            <div class="ax-card__body" style="padding-top:0;">
+              <div class="ax-alert ax-alert--info" role="status" style="margin-bottom:var(--ax-space-4);">
+                <span class="ax-alert__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21l18 0"/><path d="M3 10l18 0"/><path d="M5 6l7 -3l7 3"/><path d="M4 10l0 11"/><path d="M20 10l0 11"/><path d="M8 14l0 3"/><path d="M12 14l0 3"/><path d="M16 14l0 3"/></svg></span>
+                <div class="ax-alert__content">
+                  <p class="ax-alert__title">Outside a conservation area</p>
+                  <p class="ax-alert__message">Nearest: Empress Conservation Area (Chester Rd / Empress St) and Longford Conservation Area (Longford Park).</p>
+                </div>
+              </div>
+              <ul class="ax-list ax-list--compact">
+                <li class="ax-list__row" style="padding-inline:0;">
+                  <span class="ax-list__content"><span class="ax-list__title">Empress CA designated</span></span>
+                  <span class="ax-list__trailing ax-num" style="color:var(--ax-text-strong);">1996</span>
+                </li>
+                <li class="ax-list__row" style="padding-inline:0;">
+                  <span class="ax-list__content"><span class="ax-list__title">Longford CA designated</span></span>
+                  <span class="ax-list__trailing ax-num" style="color:var(--ax-text-strong);">25 Sep 1996</span>
+                </li>
+                <li class="ax-list__row" style="padding-inline:0;">
+                  <span class="ax-list__content"><span class="ax-list__title">Article 4 direction (Longford)</span></span>
+                  <span class="ax-list__trailing"><span class="ax-badge ax-badge--soft ax-badge--success ax-badge--sm">No</span></span>
+                </li>
+                <li class="ax-list__row" style="padding-inline:0;">
+                  <span class="ax-list__content"><span class="ax-list__title">Listed buildings nearby</span><span class="ax-list__meta">Trafford Town Hall</span></span>
+                  <span class="ax-list__trailing"><span class="ax-badge ax-badge--soft ax-badge--neutral ax-badge--sm">Grade II</span></span>
+                </li>
+                <li class="ax-list__row" style="padding-inline:0;">
+                  <span class="ax-list__content"><span class="ax-list__title">Tree preservation orders</span></span>
+                  <span class="ax-list__trailing" style="color:var(--ax-text-subtle);">—</span>
+                </li>
+                <li class="ax-list__row" style="padding-inline:0;border-bottom:0;">
+                  <span class="ax-list__content"><span class="ax-list__title">Green Belt</span></span>
+                  <span class="ax-list__trailing"><span class="ax-badge ax-badge--soft ax-badge--success ax-badge--sm">No</span></span>
+                </li>
+              </ul>
+            </div>
+          </section>
+
+          <!-- ───── COMMUNITY ROW: Facebook groups · estate agents · reserved slot ───── -->
+          <!-- Local Facebook groups & pages -->
+          <section class="ax-card ax-col--4" role="region" aria-label="Local Facebook groups">
+            <div class="ax-card__header">
+              <div class="ax-card__titles">
+                <span class="ax-card__eyebrow">Community</span>
+                <h2 class="ax-card__title">Local Facebook Groups</h2>
+                <p class="ax-card__subtitle">Old Trafford &amp; Stretford pages</p>
+              </div>
+            </div>
+            <div class="ax-card__body" style="padding-top:0;">
+              <ul class="ax-list ax-list--compact">
+                <li class="ax-list__row" style="padding-inline:0;">
+                  <span class="ax-list__leading"><span class="cr-row-ico" style="--c:var(--ax-viz-blue, var(--ax-info-500))"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 10v4h3v7h4v-7h3l1 -4h-4v-2a1 1 0 0 1 1 -1h3v-4h-3a5 5 0 0 0 -5 5v2h-3"/></svg></span></span>
+                  <span class="ax-list__content"><a class="ax-list__title cr-link-title" href="https://www.facebook.com/m16oldtrafford/" target="_blank" rel="noopener">M16 Old Trafford Group</a><span class="ax-list__meta">Community page · M16</span></span>
+                  <a class="ax-list__trailing cr-ext" href="https://www.facebook.com/m16oldtrafford/" target="_blank" rel="noopener" aria-label="Open M16 Old Trafford Group on Facebook"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6h-6a2 2 0 0 0 -2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-6"/><path d="M11 13l9 -9"/><path d="M15 4h5v5"/></svg></a>
+                </li>
+                <li class="ax-list__row" style="padding-inline:0;">
+                  <span class="ax-list__leading"><span class="cr-row-ico" style="--c:var(--ax-viz-blue, var(--ax-info-500))"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 10v4h3v7h4v-7h3l1 -4h-4v-2a1 1 0 0 1 1 -1h3v-4h-3a5 5 0 0 0 -5 5v2h-3"/></svg></span></span>
+                  <span class="ax-list__content"><a class="ax-list__title cr-link-title" href="https://www.facebook.com/MyTrafford/" target="_blank" rel="noopener">My Trafford</a><span class="ax-list__meta">Manchester Evening News · borough news</span></span>
+                  <a class="ax-list__trailing cr-ext" href="https://www.facebook.com/MyTrafford/" target="_blank" rel="noopener" aria-label="Open My Trafford on Facebook"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6h-6a2 2 0 0 0 -2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-6"/><path d="M11 13l9 -9"/><path d="M15 4h5v5"/></svg></a>
+                </li>
+                <li class="ax-list__row" style="padding-inline:0;">
+                  <span class="ax-list__leading"><span class="cr-row-ico" style="--c:var(--ax-viz-blue, var(--ax-info-500))"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 10v4h3v7h4v-7h3l1 -4h-4v-2a1 1 0 0 1 1 -1h3v-4h-3a5 5 0 0 0 -5 5v2h-3"/></svg></span></span>
+                  <span class="ax-list__content"><a class="ax-list__title cr-link-title" href="https://www.facebook.com/MyStretford/" target="_blank" rel="noopener">My Stretford</a><span class="ax-list__meta">Community page · Stretford</span></span>
+                  <a class="ax-list__trailing cr-ext" href="https://www.facebook.com/MyStretford/" target="_blank" rel="noopener" aria-label="Open My Stretford on Facebook"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6h-6a2 2 0 0 0 -2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-6"/><path d="M11 13l9 -9"/><path d="M15 4h5v5"/></svg></a>
+                </li>
+                <li class="ax-list__row" style="padding-inline:0;">
+                  <span class="ax-list__leading"><span class="cr-row-ico" style="--c:var(--ax-viz-blue, var(--ax-info-500))"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 10v4h3v7h4v-7h3l1 -4h-4v-2a1 1 0 0 1 1 -1h3v-4h-3a5 5 0 0 0 -5 5v2h-3"/></svg></span></span>
+                  <span class="ax-list__content"><a class="ax-list__title cr-link-title" href="https://www.facebook.com/TraffordCommunityNews/" target="_blank" rel="noopener">Trafford Community News</a><span class="ax-list__meta">Local news · Stretford</span></span>
+                  <a class="ax-list__trailing cr-ext" href="https://www.facebook.com/TraffordCommunityNews/" target="_blank" rel="noopener" aria-label="Open Trafford Community News on Facebook"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6h-6a2 2 0 0 0 -2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-6"/><path d="M11 13l9 -9"/><path d="M15 4h5v5"/></svg></a>
+                </li>
+                <li class="ax-list__row" style="padding-inline:0;border-bottom:0;">
+                  <span class="ax-list__leading"><span class="cr-row-ico" style="--c:var(--ax-viz-blue, var(--ax-info-500))"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 10v4h3v7h4v-7h3l1 -4h-4v-2a1 1 0 0 1 1 -1h3v-4h-3a5 5 0 0 0 -5 5v2h-3"/></svg></span></span>
+                  <span class="ax-list__content"><a class="ax-list__title cr-link-title" href="https://www.facebook.com/SaintJohnsCentre/" target="_blank" rel="noopener">St John's Centre Old Trafford</a><span class="ax-list__meta">Community centre · events</span></span>
+                  <a class="ax-list__trailing cr-ext" href="https://www.facebook.com/SaintJohnsCentre/" target="_blank" rel="noopener" aria-label="Open St John's Centre Old Trafford on Facebook"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6h-6a2 2 0 0 0 -2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-6"/><path d="M11 13l9 -9"/><path d="M15 4h5v5"/></svg></a>
+                </li>
+              </ul>
+              <a class="cr-radon__link cr-card-foot" href="https://www.facebook.com/search/groups/?q=Old%20Trafford" target="_blank" rel="noopener">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10a7 7 0 1 0 14 0a7 7 0 1 0 -14 0"/><path d="M21 21l-6 -6"/></svg>
+                Search more Old Trafford groups
+                <span class="cr-radon__ext"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6h-6a2 2 0 0 0 -2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-6"/><path d="M11 13l9 -9"/><path d="M15 4h5v5"/></svg></span>
+              </a>
+            </div>
+          </section>
+
+          <!-- Local estate agents (Zoopla M16 agent list + Stretford) -->
+          <section class="ax-card ax-col--4" role="region" aria-label="Local estate agents">
+            <div class="ax-card__header">
+              <div class="ax-card__titles">
+                <span class="ax-card__eyebrow">Property</span>
+                <h2 class="ax-card__title">Local Estate Agents</h2>
+                <p class="ax-card__subtitle">Branches covering M16</p>
+              </div>
+            </div>
+            <div class="ax-card__body" style="padding-top:0;">
+              <ul class="ax-list ax-list--compact">
+                <li class="ax-list__row" style="padding-inline:0;">
+                  <span class="ax-list__leading"><span class="cr-row-ico" style="--c:var(--ax-accent)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l-2 0l9 -9l9 9l-2 0"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7"/><path d="M10 15a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"/><path d="M12 17v4"/></svg></span></span>
+                  <span class="ax-list__content" style="min-width:0;"><span class="ax-list__title">David Andrews Homes</span><span class="ax-list__meta ax-truncate" style="display:block;">274 Upper Chorlton Rd, Old Trafford M16 0BN</span></span>
+                  <span class="ax-list__trailing"><span class="ax-badge ax-badge--soft ax-badge--neutral ax-badge--sm">Sales &amp; lettings</span></span>
+                </li>
+                <li class="ax-list__row" style="padding-inline:0;">
+                  <span class="ax-list__leading"><span class="cr-row-ico" style="--c:var(--ax-accent)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l-2 0l9 -9l9 9l-2 0"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7"/><path d="M10 15a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"/><path d="M12 17v4"/></svg></span></span>
+                  <span class="ax-list__content" style="min-width:0;"><span class="ax-list__title">Trading Places · Stretford</span><span class="ax-list__meta ax-truncate" style="display:block;">164 Barton Rd, Stretford M32 8DP</span></span>
+                  <span class="ax-list__trailing"><span style="color:var(--ax-text-subtle);">—</span></span>
+                </li>
+                <li class="ax-list__row" style="padding-inline:0;">
+                  <span class="ax-list__leading"><span class="cr-row-ico" style="--c:var(--ax-accent)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l-2 0l9 -9l9 9l-2 0"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7"/><path d="M10 15a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"/><path d="M12 17v4"/></svg></span></span>
+                  <span class="ax-list__content" style="min-width:0;"><span class="ax-list__title">Bridgfords · Chorlton</span><span class="ax-list__meta ax-truncate" style="display:block;">561 Barlow Moor Rd, Chorlton M21 8AN</span></span>
+                  <span class="ax-list__trailing"><span class="ax-badge ax-badge--soft ax-badge--neutral ax-badge--sm">Sales &amp; lettings</span></span>
+                </li>
+                <li class="ax-list__row" style="padding-inline:0;">
+                  <span class="ax-list__leading"><span class="cr-row-ico" style="--c:var(--ax-accent)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l-2 0l9 -9l9 9l-2 0"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7"/><path d="M10 15a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"/><path d="M12 17v4"/></svg></span></span>
+                  <span class="ax-list__content" style="min-width:0;"><span class="ax-list__title">Jordan Fishwick</span><span class="ax-list__meta ax-truncate" style="display:block;">410–412 Barlow Moor Rd, Chorlton M21 8AD</span></span>
+                  <span class="ax-list__trailing"><span class="ax-badge ax-badge--soft ax-badge--neutral ax-badge--sm">Sales &amp; lettings</span></span>
+                </li>
+                <li class="ax-list__row" style="padding-inline:0;border-bottom:0;">
+                  <span class="ax-list__leading"><span class="cr-row-ico" style="--c:var(--ax-accent)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l-2 0l9 -9l9 9l-2 0"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7"/><path d="M10 15a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"/><path d="M12 17v4"/></svg></span></span>
+                  <span class="ax-list__content" style="min-width:0;"><span class="ax-list__title">Park Lane Estates</span><span class="ax-list__meta ax-truncate" style="display:block;">27 Flixton Rd, Urmston M41 5EL</span></span>
+                  <span class="ax-list__trailing"><span class="ax-badge ax-badge--soft ax-badge--neutral ax-badge--sm">Sales &amp; lettings</span></span>
+                </li>
+              </ul>
+              <a class="cr-radon__link cr-card-foot" href="https://www.zoopla.co.uk/find-agents/m16/" target="_blank" rel="noopener">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7l6 -3l6 3l6 -3v13l-6 3l-6 -3l-6 3v-13"/><path d="M9 4v13"/><path d="M15 7v13"/></svg>
+                All agents covering M16 on Zoopla
+                <span class="cr-radon__ext"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6h-6a2 2 0 0 0 -2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-6"/><path d="M11 13l9 -9"/><path d="M15 4h5v5"/></svg></span>
+              </a>
+            </div>
+          </section>
+
+          <!-- Sponsored — Corelain Party Wall surveying -->
+          <a class="ax-card ax-col--4 cr-ad" href="https://www.corelain.com/party-wall-surveyor-manchester" target="_blank" rel="sponsored noopener">
+            <span class="cr-ad__rings" aria-hidden="true"></span>
+            <span class="cr-ad__top">
+              <img class="cr-ad__logo" src="/images/logo-mark-dark.png" alt="" width="502" height="390">
+              <span class="cr-ad__tag">Sponsored · Corelain</span>
+            </span>
+            <span class="cr-ad__eyebrow">Building or extending near a neighbour?</span>
+            <span class="cr-ad__title">Party Wall Surveyors in <span data-cr-area-name>Old Trafford</span></span>
+            <span class="cr-ad__text">Notices, awards and impartial advice under the Party Wall etc. Act 1996, across Greater Manchester and the North West.</span>
+            <span class="cr-ad__points">
+              <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5l10 -10"/></svg>Clear</span><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5l10 -10"/></svg>Efficient</span><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5l10 -10"/></svg>Compliant</span><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5l10 -10"/></svg>Fair</span>
+            </span>
+            <span class="cr-ad__cta">Get party wall advice
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l14 0"/><path d="M13 18l6 -6"/><path d="M13 6l6 6"/></svg>
+            </span>
+          </a>
+
+          <!-- ───── LOCAL NEWSPAPER ───── -->
+          <section class="ax-card ax-col--12" role="region" aria-label="Local newspaper">
+            <div class="ax-card__header">
+              <div class="ax-card__titles">
+                <span class="ax-card__eyebrow">Local press</span>
+                <h2 class="ax-card__title">Local Newspaper</h2>
+                <p class="ax-card__subtitle">Latest Old Trafford headlines</p>
+              </div>
+              <a class="ax-btn ax-btn--link" href="https://footballgroundguide.com/news/old-trafford-redevelopment-updates" target="_blank" rel="noopener">More stories</a>
+            </div>
+            <div class="ax-card__body" style="padding-top:0;">
+              <div class="cr-news">
+                <article class="cr-news__item">
+                  <a class="cr-news__media" href="https://footballgroundguide.com/news/old-trafford-redevelopment-updates" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+                    <img src="/images/news/planning.jpg" alt="" width="640" height="400" loading="lazy" decoding="async">
+                    <span class="cr-news__source">Football Ground Guide</span>
+                  </a>
+                  <div class="cr-news__body">
+                    <div class="cr-news__tags">
+                      <span class="ax-badge ax-badge--soft ax-badge--accent ax-badge--sm">Planning</span>
+                      <span class="cr-news__time">13 Sep 2026</span>
+                    </div>
+                    <h3 class="cr-news__title"><a href="https://footballgroundguide.com/news/old-trafford-redevelopment-updates" target="_blank" rel="noopener">Lord Coe admits new stadium timescale is "uncertain"</a></h3>
+                    <p class="cr-news__excerpt">MDC chair says scoping and land acquisition are ongoing; no opening date named.</p>
+                    <div class="cr-news__foot">
+                      <span>footballgroundguide.com</span>
+                      <a class="cr-news__more" href="https://footballgroundguide.com/news/old-trafford-redevelopment-updates" target="_blank" rel="noopener" aria-label="Read: Lord Coe admits new stadium timescale is uncertain">Read
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l14 0"/><path d="M13 18l6 -6"/><path d="M13 6l6 6"/></svg>
+                      </a>
+                    </div>
+                  </div>
+                </article>
+                <article class="cr-news__item">
+                  <a class="cr-news__media" href="https://footballgroundguide.com/news/old-trafford-redevelopment-updates" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+                    <img src="/images/news/transport.jpg" alt="" width="640" height="400" loading="lazy" decoding="async">
+                    <span class="cr-news__source">Football Ground Guide</span>
+                  </a>
+                  <div class="cr-news__body">
+                    <div class="cr-news__tags">
+                      <span class="ax-badge ax-badge--soft ax-badge--accent ax-badge--sm">Planning</span>
+                      <span class="cr-news__time">Sep 2026</span>
+                    </div>
+                    <h3 class="cr-news__title"><a href="https://footballgroundguide.com/news/old-trafford-redevelopment-updates" target="_blank" rel="noopener">Stadium's 90 m trident needs Manchester Airport sign-off</a></h3>
+                    <p class="cr-news__excerpt">The design feature sits in a flight-path zone, requiring airport permission.</p>
+                    <div class="cr-news__foot">
+                      <span>footballgroundguide.com</span>
+                      <a class="cr-news__more" href="https://footballgroundguide.com/news/old-trafford-redevelopment-updates" target="_blank" rel="noopener" aria-label="Read: Stadium's 90 m trident needs Manchester Airport sign-off">Read
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l14 0"/><path d="M13 18l6 -6"/><path d="M13 6l6 6"/></svg>
+                      </a>
+                    </div>
+                  </div>
+                </article>
+                <article class="cr-news__item">
+                  <a class="cr-news__media" href="https://www.chartmill.com/news/external/51469/bizwire-2026-6-22-manchester-united-secures-land-for-new-100000-seat-stadium" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+                    <img src="/images/news/schools.jpg" alt="" width="640" height="400" loading="lazy" decoding="async">
+                    <span class="cr-news__source">Business Wire</span>
+                  </a>
+                  <div class="cr-news__body">
+                    <div class="cr-news__tags">
+                      <span class="ax-badge ax-badge--soft ax-badge--info ax-badge--sm">Regeneration</span>
+                      <span class="cr-news__time">22 Jun 2026</span>
+                    </div>
+                    <h3 class="cr-news__title"><a href="https://www.chartmill.com/news/external/51469/bizwire-2026-6-22-manchester-united-secures-land-for-new-100000-seat-stadium" target="_blank" rel="noopener">Manchester United secures land for 100,000-seat stadium</a></h3>
+                    <p class="cr-news__excerpt">Club confirms site; regeneration aims for ~15,000 homes and 48,000 local jobs.</p>
+                    <div class="cr-news__foot">
+                      <span>businesswire.com</span>
+                      <a class="cr-news__more" href="https://www.chartmill.com/news/external/51469/bizwire-2026-6-22-manchester-united-secures-land-for-new-100000-seat-stadium" target="_blank" rel="noopener" aria-label="Read: Manchester United secures land for 100,000-seat stadium">Read
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l14 0"/><path d="M13 18l6 -6"/><path d="M13 6l6 6"/></svg>
+                      </a>
+                    </div>
+                  </div>
+                </article>
+                <article class="cr-news__item">
+                  <a class="cr-news__media" href="https://www.mancity.com/news/mens/manchester-derby-old-trafford-stats-september-2026-63925064" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+                    <img src="/images/news/environment.jpg" alt="" width="640" height="400" loading="lazy" decoding="async">
+                    <span class="cr-news__source">Man City</span>
+                  </a>
+                  <div class="cr-news__body">
+                    <div class="cr-news__tags">
+                      <span class="ax-badge ax-badge--soft ax-badge--success ax-badge--sm">Sport</span>
+                      <span class="cr-news__time">13 Sep 2026</span>
+                    </div>
+                    <h3 class="cr-news__title"><a href="https://www.mancity.com/news/mens/manchester-derby-old-trafford-stats-september-2026-63925064" target="_blank" rel="noopener">City win Manchester derby 1–0 at Old Trafford</a></h3>
+                    <p class="cr-news__excerpt">Crowd of 74,161 — the season's highest Premier League attendance so far.</p>
+                    <div class="cr-news__foot">
+                      <span>mancity.com</span>
+                      <a class="cr-news__more" href="https://www.mancity.com/news/mens/manchester-derby-old-trafford-stats-september-2026-63925064" target="_blank" rel="noopener" aria-label="Read: City win Manchester derby 1–0 at Old Trafford">Read
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l14 0"/><path d="M13 18l6 -6"/><path d="M13 6l6 6"/></svg>
+                      </a>
+                    </div>
+                  </div>
+                </article>
+              </div>
+            </div>
+          </section>
+
+
+          <!-- FAQ:START (generated by src/seo/faq.py — edit there) -->
+          <!-- ───── FAQ — topic tabs + answers; every answer stays in the HTML for crawlers ───── -->
+          <section class="ax-card ax-col--12" role="region" aria-labelledby="cr-faq-title" x-data="{ topic: 'prices' }">
+            <div class="ax-card__header">
+              <div class="ax-card__titles">
+                <span class="ax-card__eyebrow">Quick answers</span>
+                <h2 class="ax-card__title" id="cr-faq-title"><span data-cr-area-name>Old Trafford</span>: Frequently Asked Questions</h2>
+                <p class="ax-card__subtitle">32 answers based on the sourced figures on this page · reviewed <time datetime="2026-10-07">2026-10-07</time></p>
+              </div>
+            </div>
+            <div class="ax-card__body" style="padding-top:0;">
+              <div class="cr-faq">
+                <div class="cr-faq__tabs" role="tablist" aria-label="FAQ topics" aria-orientation="vertical"
+                     @keydown.arrow-down.prevent="$focus.wrap().next(); $focus.focused().click()"
+                     @keydown.arrow-up.prevent="$focus.wrap().previous(); $focus.focused().click()"
+                     @keydown.arrow-right.prevent="$focus.wrap().next(); $focus.focused().click()"
+                     @keydown.arrow-left.prevent="$focus.wrap().previous(); $focus.focused().click()">
+                  <button type="button" class="cr-faq__tab" role="tab" id="cr-faq-tab-prices" aria-controls="cr-faq-panel-prices"
+                          :aria-selected="topic === 'prices'" aria-selected="true" :tabindex="topic === 'prices' ? 0 : -1" tabindex="0"
+                          :class="{ 'is-active': topic === 'prices' }" @click="topic = 'prices'" style="--c:var(--ax-accent)">
+                    <span class="cr-faq__tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l-2 0l9 -9l9 9l-2 0"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7"/><path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6"/></svg></span>
+                    <span class="cr-faq__tab-label">House prices</span>
+                    <span class="cr-faq__tab-count">4</span>
+                  </button>
+                  <button type="button" class="cr-faq__tab" role="tab" id="cr-faq-tab-crime" aria-controls="cr-faq-panel-crime"
+                          :aria-selected="topic === 'crime'" aria-selected="false" :tabindex="topic === 'crime' ? 0 : -1" tabindex="-1"
+                          :class="{ 'is-active': topic === 'crime' }" @click="topic = 'crime'" style="--c:var(--ax-viz-violet)">
+                    <span class="cr-faq__tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a12 12 0 0 0 8.5 3a12 12 0 0 1 -8.5 15a12 12 0 0 1 -8.5 -15a12 12 0 0 0 8.5 -3"/></svg></span>
+                    <span class="cr-faq__tab-label">Crime &amp; safety</span>
+                    <span class="cr-faq__tab-count">3</span>
+                  </button>
+                  <button type="button" class="cr-faq__tab" role="tab" id="cr-faq-tab-schools" aria-controls="cr-faq-panel-schools"
+                          :aria-selected="topic === 'schools'" aria-selected="false" :tabindex="topic === 'schools' ? 0 : -1" tabindex="-1"
+                          :class="{ 'is-active': topic === 'schools' }" @click="topic = 'schools'" style="--c:var(--ax-viz-amber)">
+                    <span class="cr-faq__tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 9l-10 -4l-10 4l10 4l10 -4v6"/><path d="M6 10.6v5.4a6 3 0 0 0 12 0v-5.4"/></svg></span>
+                    <span class="cr-faq__tab-label">Schools</span>
+                    <span class="cr-faq__tab-count">3</span>
+                  </button>
+                  <button type="button" class="cr-faq__tab" role="tab" id="cr-faq-tab-transport" aria-controls="cr-faq-panel-transport"
+                          :aria-selected="topic === 'transport'" aria-selected="false" :tabindex="topic === 'transport' ? 0 : -1" tabindex="-1"
+                          :class="{ 'is-active': topic === 'transport' }" @click="topic = 'transport'" style="--c:var(--ax-viz-cyan)">
+                    <span class="cr-faq__tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4h12"/><path d="M12 4v3"/><path d="M5 9a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v7a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2z"/><path d="M5 13h14"/><path d="M8 18l-2 3"/><path d="M16 18l2 3"/></svg></span>
+                    <span class="cr-faq__tab-label">Transport</span>
+                    <span class="cr-faq__tab-count">4</span>
+                  </button>
+                  <button type="button" class="cr-faq__tab" role="tab" id="cr-faq-tab-flood" aria-controls="cr-faq-panel-flood"
+                          :aria-selected="topic === 'flood'" aria-selected="false" :tabindex="topic === 'flood' ? 0 : -1" tabindex="-1"
+                          :class="{ 'is-active': topic === 'flood' }" @click="topic = 'flood'" style="--c:var(--ax-info-500)">
+                    <span class="cr-faq__tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7c3 -2 6 -2 9 0s6 2 9 0"/><path d="M3 12c3 -2 6 -2 9 0s6 2 9 0"/><path d="M3 17c3 -2 6 -2 9 0s6 2 9 0"/></svg></span>
+                    <span class="cr-faq__tab-label">Flood risk</span>
+                    <span class="cr-faq__tab-count">3</span>
+                  </button>
+                  <button type="button" class="cr-faq__tab" role="tab" id="cr-faq-tab-ground" aria-controls="cr-faq-panel-ground"
+                          :aria-selected="topic === 'ground'" aria-selected="false" :tabindex="topic === 'ground' ? 0 : -1" tabindex="-1"
+                          :class="{ 'is-active': topic === 'ground' }" @click="topic = 'ground'" style="--c:var(--ax-viz-emerald)">
+                    <span class="cr-faq__tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4l-8 4l8 4l8 -4l-8 -4"/><path d="M4 12l8 4l8 -4"/><path d="M4 16l8 4l8 -4"/></svg></span>
+                    <span class="cr-faq__tab-label">Ground &amp; radon</span>
+                    <span class="cr-faq__tab-count">3</span>
+                  </button>
+                  <button type="button" class="cr-faq__tab" role="tab" id="cr-faq-tab-air" aria-controls="cr-faq-panel-air"
+                          :aria-selected="topic === 'air'" aria-selected="false" :tabindex="topic === 'air' ? 0 : -1" tabindex="-1"
+                          :class="{ 'is-active': topic === 'air' }" @click="topic = 'air'" style="--c:var(--ax-viz-amber)">
+                    <span class="cr-faq__tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 8h8.5a2.5 2.5 0 1 0 -2.34 -3.24"/><path d="M3 12h15.5a2.5 2.5 0 1 1 -2.34 3.24"/><path d="M4 16h5.5a2.5 2.5 0 1 1 -2.34 3.24"/></svg></span>
+                    <span class="cr-faq__tab-label">Air quality</span>
+                    <span class="cr-faq__tab-count">3</span>
+                  </button>
+                  <button type="button" class="cr-faq__tab" role="tab" id="cr-faq-tab-development" aria-controls="cr-faq-panel-development"
+                          :aria-selected="topic === 'development'" aria-selected="false" :tabindex="topic === 'development' ? 0 : -1" tabindex="-1"
+                          :class="{ 'is-active': topic === 'development' }" @click="topic = 'development'" style="--c:var(--ax-viz-violet)">
+                    <span class="cr-faq__tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 21h6"/><path d="M9 21v-18l-6 6h18"/><path d="M9 3l10 6"/><path d="M17 9v4a2 2 0 1 1 -2 2"/></svg></span>
+                    <span class="cr-faq__tab-label">Developments</span>
+                    <span class="cr-faq__tab-count">3</span>
+                  </button>
+                  <button type="button" class="cr-faq__tab" role="tab" id="cr-faq-tab-conservation" aria-controls="cr-faq-panel-conservation"
+                          :aria-selected="topic === 'conservation'" aria-selected="false" :tabindex="topic === 'conservation' ? 0 : -1" tabindex="-1"
+                          :class="{ 'is-active': topic === 'conservation' }" @click="topic = 'conservation'" style="--c:var(--ax-text-muted)">
+                    <span class="cr-faq__tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21l18 0"/><path d="M3 10l18 0"/><path d="M5 6l7 -3l7 3"/><path d="M4 10l0 11"/><path d="M20 10l0 11"/><path d="M8 14l0 3"/><path d="M12 14l0 3"/><path d="M16 14l0 3"/></svg></span>
+                    <span class="cr-faq__tab-label">Conservation</span>
+                    <span class="cr-faq__tab-count">3</span>
+                  </button>
+                  <button type="button" class="cr-faq__tab" role="tab" id="cr-faq-tab-local" aria-controls="cr-faq-panel-local"
+                          :aria-selected="topic === 'local'" aria-selected="false" :tabindex="topic === 'local' ? 0 : -1" tabindex="-1"
+                          :class="{ 'is-active': topic === 'local' }" @click="topic = 'local'" style="--c:var(--ax-accent)">
+                    <span class="cr-faq__tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 7m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0"/><path d="M3 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><path d="M21 21v-2a4 4 0 0 0 -3 -3.85"/></svg></span>
+                    <span class="cr-faq__tab-label">Local services</span>
+                    <span class="cr-faq__tab-count">3</span>
+                  </button>
+                </div>
+                <div class="cr-faq__panels">
+                <div class="cr-faq__panel" role="tabpanel" id="cr-faq-panel-prices" aria-labelledby="cr-faq-tab-prices" x-show="topic === 'prices'">
+                  <h3 class="cr-faq__panel-title">House prices</h3>
+                    <details class="cr-faq__item" open>
+                      <summary><h3 class="cr-faq__q">What is the average house price in <span data-cr-area-name>Old Trafford</span> (<span data-cr-area-postcode>M16</span>)?</h3><svg class="cr-faq__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6l6 -6"/></svg></summary>
+                      <p class="cr-faq__a">The average sold price in <span data-cr-area-postcode>M16</span> was £316,545 in the 12 months to 31 March 2026, based on 191 sales (HM Land Registry).</p>
+                    </details>
+                    <details class="cr-faq__item">
+                      <summary><h3 class="cr-faq__q">Are house prices in <span data-cr-area-name>Old Trafford</span> going up?</h3><svg class="cr-faq__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6l6 -6"/></svg></summary>
+                      <p class="cr-faq__a">Yes. Prices rose 1.6% on the previous 12 months, slightly ahead of UK annual growth of 1.4% (UK HPI, July 2026). Over 2016–2025 the yearly average rose from £176,750 to £322,464, about 82%.</p>
+                    </details>
+                    <details class="cr-faq__item">
+                      <summary><h3 class="cr-faq__q">How much does property cost per square foot in <span data-cr-area-name>Old Trafford</span>?</h3><svg class="cr-faq__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6l6 -6"/></svg></summary>
+                      <p class="cr-faq__a">About £360 per square foot (£3,880 per m²), the median for the local postcode sector.</p>
+                    </details>
+                    <details class="cr-faq__item">
+                      <summary><h3 class="cr-faq__q">How much do flats and houses cost in <span data-cr-area-name>Old Trafford</span>?</h3><svg class="cr-faq__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6l6 -6"/></svg></summary>
+                      <p class="cr-faq__a">Over the last three years flats averaged £172,921 (357 sales), semi-detached homes £427,964 (246 sales) and detached homes £481,201 (37 sales). Detached figures rest on very few sales, so treat them with caution.</p>
+                    </details>
+                </div>
+                <div class="cr-faq__panel" role="tabpanel" id="cr-faq-panel-crime" aria-labelledby="cr-faq-tab-crime" x-show="topic === 'crime'" x-cloak>
+                  <h3 class="cr-faq__panel-title">Crime &amp; safety</h3>
+                    <details class="cr-faq__item" open>
+                      <summary><h3 class="cr-faq__q">Is <span data-cr-area-name>Old Trafford</span> a safe area?</h3><svg class="cr-faq__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6l6 -6"/></svg></summary>
+                      <p class="cr-faq__a"><span data-cr-area-name>Old Trafford</span> sits in Trafford borough, which recorded 27 violent crimes per 1,000 residents in the year to September 2025 — one of the lowest rates in the North West (ONS). <span data-cr-area-name>Old Trafford</span> is among the more deprived parts of the borough, so street-level rates may differ from the borough average.</p>
+                    </details>
+                    <details class="cr-faq__item">
+                      <summary><h3 class="cr-faq__q">How does crime in Trafford compare with Manchester?</h3><svg class="cr-faq__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6l6 -6"/></svg></summary>
+                      <p class="cr-faq__a">Trafford&#x27;s violent crime rate of 27 per 1,000 residents is about 48% lower than Manchester&#x27;s 52 per 1,000 (ONS, year to September 2025).</p>
+                    </details>
+                    <details class="cr-faq__item">
+                      <summary><h3 class="cr-faq__q">Why is there no street-level crime data for <span data-cr-area-name>Old Trafford</span>?</h3><svg class="cr-faq__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6l6 -6"/></svg></summary>
+                      <p class="cr-faq__a">Greater Manchester Police does not currently publish street-level crime records to police.uk, so neighbourhood rates for categories such as burglary or vehicle crime are not available. The borough figure is the most reliable published measure.</p>
+                    </details>
+                </div>
+                <div class="cr-faq__panel" role="tabpanel" id="cr-faq-panel-schools" aria-labelledby="cr-faq-tab-schools" x-show="topic === 'schools'" x-cloak>
+                  <h3 class="cr-faq__panel-title">Schools</h3>
+                    <details class="cr-faq__item" open>
+                      <summary><h3 class="cr-faq__q">What are the best primary schools near <span data-cr-area-name>Old Trafford</span>?</h3><svg class="cr-faq__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6l6 -6"/></svg></summary>
+                      <p class="cr-faq__a">Seymour Park Community Primary, about 1.0 mile away, is rated Outstanding by Ofsted (December 2023). Old Trafford Community Academy, about 1.1 miles away, was inspected in October 2024.</p>
+                    </details>
+                    <details class="cr-faq__item">
+                      <summary><h3 class="cr-faq__q">Which secondary schools are near <span data-cr-area-name>Old Trafford</span>?</h3><svg class="cr-faq__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6l6 -6"/></svg></summary>
+                      <p class="cr-faq__a">Stretford High School (about 0.9 miles), Stretford Grammar School (a selective grammar, about 1.2 miles) and Trinity CofE High School (ages 11–19, about 1.8 miles) are all rated Good by Ofsted.</p>
+                    </details>
+                    <details class="cr-faq__item">
+                      <summary><h3 class="cr-faq__q">Why does Old Trafford Community Academy have no Ofsted grade?</h3><svg class="cr-faq__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6l6 -6"/></svg></summary>
+                      <p class="cr-faq__a">Ofsted stopped giving a one-word overall grade for inspections from September 2024. The academy&#x27;s October 2024 report covers each area separately instead.</p>
+                    </details>
+                </div>
+                <div class="cr-faq__panel" role="tabpanel" id="cr-faq-panel-transport" aria-labelledby="cr-faq-tab-transport" x-show="topic === 'transport'" x-cloak>
+                  <h3 class="cr-faq__panel-title">Transport</h3>
+                    <details class="cr-faq__item" open>
+                      <summary><h3 class="cr-faq__q">How do you get from <span data-cr-area-name>Old Trafford</span> to Manchester city centre?</h3><svg class="cr-faq__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6l6 -6"/></svg></summary>
+                      <p class="cr-faq__a">Walk about 10 minutes to Old Trafford Metrolink stop, then take the Altrincham line tram to St Peter&#x27;s Square in about 10 minutes — roughly 20 minutes door to door.</p>
+                    </details>
+                    <details class="cr-faq__item">
+                      <summary><h3 class="cr-faq__q">How often do trams run from <span data-cr-area-name>Old Trafford</span>?</h3><svg class="cr-faq__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6l6 -6"/></svg></summary>
+                      <p class="cr-faq__a">Trams on the Altrincham line run every 6–12 minutes. Trafford Bar stop is also close by.</p>
+                    </details>
+                    <details class="cr-faq__item">
+                      <summary><h3 class="cr-faq__q">Is <span data-cr-area-name>Old Trafford</span> close to the motorway?</h3><svg class="cr-faq__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6l6 -6"/></svg></summary>
+                      <p class="cr-faq__a">Yes. Junction 7 of the M60 (Stretford) is about 2.3 miles away.</p>
+                    </details>
+                    <details class="cr-faq__item">
+                      <summary><h3 class="cr-faq__q">Does the Manchester United Football Ground station open every day?</h3><svg class="cr-faq__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6l6 -6"/></svg></summary>
+                      <p class="cr-faq__a">No. Manchester United Football Ground station opens on matchdays only.</p>
+                    </details>
+                </div>
+                <div class="cr-faq__panel" role="tabpanel" id="cr-faq-panel-flood" aria-labelledby="cr-faq-tab-flood" x-show="topic === 'flood'" x-cloak>
+                  <h3 class="cr-faq__panel-title">Flood risk</h3>
+                    <details class="cr-faq__item" open>
+                      <summary><h3 class="cr-faq__q">Is <span data-cr-area-name>Old Trafford</span> at risk of flooding?</h3><svg class="cr-faq__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6l6 -6"/></svg></summary>
+                      <p class="cr-faq__a">Long-term flood risk is low overall. The Environment Agency rates the risk from rivers and the sea as very low, and from surface water and groundwater as low.</p>
+                    </details>
+                    <details class="cr-faq__item">
+                      <summary><h3 class="cr-faq__q">Does the Manchester Ship Canal increase flood risk?</h3><svg class="cr-faq__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6l6 -6"/></svg></summary>
+                      <p class="cr-faq__a">The canal is nearby, and flooding from it is modelled in the Manchester–Salford–Trafford Strategic Flood Risk Assessment (SFRA). Most of the area lies outside Environment Agency high and medium risk zones.</p>
+                    </details>
+                    <details class="cr-faq__item">
+                      <summary><h3 class="cr-faq__q">How can I check the flood risk for a specific property?</h3><svg class="cr-faq__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6l6 -6"/></svg></summary>
+                      <p class="cr-faq__a">Surface-water risk varies from street to street, so check the exact postcode on the Environment Agency&#x27;s long-term flood risk service (check-long-term-flood-risk.service.gov.uk) before you buy.</p>
+                    </details>
+                </div>
+                <div class="cr-faq__panel" role="tabpanel" id="cr-faq-panel-ground" aria-labelledby="cr-faq-tab-ground" x-show="topic === 'ground'" x-cloak>
+                  <h3 class="cr-faq__panel-title">Ground &amp; radon</h3>
+                    <details class="cr-faq__item" open>
+                      <summary><h3 class="cr-faq__q">Is radon a concern in <span data-cr-area-name>Old Trafford</span>?</h3><svg class="cr-faq__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6l6 -6"/></svg></summary>
+                      <p class="cr-faq__a">No. <span data-cr-area-name>Old Trafford</span> is in radon potential class 1 of 6 — the lowest — where fewer than 1% of homes are above the action level.</p>
+                    </details>
+                    <details class="cr-faq__item">
+                      <summary><h3 class="cr-faq__q">Is <span data-cr-area-name>Old Trafford</span> in a coal mining area?</h3><svg class="cr-faq__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6l6 -6"/></svg></summary>
+                      <p class="cr-faq__a">This has not been verified yet. Check the property with the Coal Authority before purchase via gov.uk/check-if-property-is-affected-by-coal-mining.</p>
+                    </details>
+                    <details class="cr-faq__item">
+                      <summary><h3 class="cr-faq__q">Is there a risk of ground subsidence in <span data-cr-area-name>Old Trafford</span>?</h3><svg class="cr-faq__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6l6 -6"/></svg></summary>
+                      <p class="cr-faq__a">Natural ground subsidence risk is rated low.</p>
+                    </details>
+                </div>
+                <div class="cr-faq__panel" role="tabpanel" id="cr-faq-panel-air" aria-labelledby="cr-faq-tab-air" x-show="topic === 'air'" x-cloak>
+                  <h3 class="cr-faq__panel-title">Air quality</h3>
+                    <details class="cr-faq__item" open>
+                      <summary><h3 class="cr-faq__q">What is the air quality like in <span data-cr-area-name>Old Trafford</span>?</h3><svg class="cr-faq__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6l6 -6"/></svg></summary>
+                      <p class="cr-faq__a"><span data-cr-area-name>Old Trafford</span> lies within or next to Trafford&#x27;s A56 Chester Road Air Quality Management Area. Roadside nitrogen dioxide averaged about 30 µg/m³ a year, below the legal limit of 40.</p>
+                    </details>
+                    <details class="cr-faq__item">
+                      <summary><h3 class="cr-faq__q">What is an Air Quality Management Area (AQMA)?</h3><svg class="cr-faq__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6l6 -6"/></svg></summary>
+                      <p class="cr-faq__a">An AQMA is an area where a council has found that a national air quality objective may not be met, and has to act on it. In <span data-cr-area-name>Old Trafford</span> it covers the busy A56 Chester Road corridor.</p>
+                    </details>
+                    <details class="cr-faq__item">
+                      <summary><h3 class="cr-faq__q">Where do the live air quality readings come from?</h3><svg class="cr-faq__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6l6 -6"/></svg></summary>
+                      <p class="cr-faq__a">The live PM2.5, NO₂, PM10 and European AQI readings come from the Open-Meteo air quality model. They are modelled values for the area, not readings from a single roadside monitor.</p>
+                    </details>
+                </div>
+                <div class="cr-faq__panel" role="tabpanel" id="cr-faq-panel-development" aria-labelledby="cr-faq-tab-development" x-show="topic === 'development'" x-cloak>
+                  <h3 class="cr-faq__panel-title">Developments</h3>
+                    <details class="cr-faq__item" open>
+                      <summary><h3 class="cr-faq__q">What is being built in <span data-cr-area-name>Old Trafford</span>?</h3><svg class="cr-faq__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6l6 -6"/></svg></summary>
+                      <p class="cr-faq__a">The Old Trafford Regeneration Mayoral Development Corporation, launched in January 2026, covers a 370-acre district with about 15,000 new homes. Manchester United secured land for a new 100,000-seat stadium in June 2026, and the Trafford Wharfside masterplan was published in July 2026.</p>
+                    </details>
+                    <details class="cr-faq__item">
+                      <summary><h3 class="cr-faq__q">When will the new Manchester United stadium open?</h3><svg class="cr-faq__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6l6 -6"/></svg></summary>
+                      <p class="cr-faq__a">No opening date has been set. In September 2026 the corporation&#x27;s chair, Lord Coe, said the timescale is uncertain while scoping and land acquisition continue.</p>
+                    </details>
+                    <details class="cr-faq__item">
+                      <summary><h3 class="cr-faq__q">How many homes and jobs will the regeneration bring?</h3><svg class="cr-faq__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6l6 -6"/></svg></summary>
+                      <p class="cr-faq__a">The plans aim for about 15,000 homes and 48,000 local jobs.</p>
+                    </details>
+                </div>
+                <div class="cr-faq__panel" role="tabpanel" id="cr-faq-panel-conservation" aria-labelledby="cr-faq-tab-conservation" x-show="topic === 'conservation'" x-cloak>
+                  <h3 class="cr-faq__panel-title">Conservation</h3>
+                    <details class="cr-faq__item" open>
+                      <summary><h3 class="cr-faq__q">Is <span data-cr-area-name>Old Trafford</span> in a conservation area?</h3><svg class="cr-faq__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6l6 -6"/></svg></summary>
+                      <p class="cr-faq__a">The stadium area is outside a conservation area. The nearest are the Empress Conservation Area (Chester Road / Empress Street) and the Longford Conservation Area (Longford Park), both designated in 1996.</p>
+                    </details>
+                    <details class="cr-faq__item">
+                      <summary><h3 class="cr-faq__q">Are there listed buildings in <span data-cr-area-name>Old Trafford</span>?</h3><svg class="cr-faq__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6l6 -6"/></svg></summary>
+                      <p class="cr-faq__a">Trafford Town Hall nearby is a Grade II listed building.</p>
+                    </details>
+                    <details class="cr-faq__item">
+                      <summary><h3 class="cr-faq__q">Is <span data-cr-area-name>Old Trafford</span> in the Green Belt?</h3><svg class="cr-faq__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6l6 -6"/></svg></summary>
+                      <p class="cr-faq__a">No. There is no Article 4 direction in the Longford Conservation Area either.</p>
+                    </details>
+                </div>
+                <div class="cr-faq__panel" role="tabpanel" id="cr-faq-panel-local" aria-labelledby="cr-faq-tab-local" x-show="topic === 'local'" x-cloak>
+                  <h3 class="cr-faq__panel-title">Local services</h3>
+                    <details class="cr-faq__item" open>
+                      <summary><h3 class="cr-faq__q">Which estate agents cover <span data-cr-area-name>Old Trafford</span>?</h3><svg class="cr-faq__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6l6 -6"/></svg></summary>
+                      <p class="cr-faq__a">Agents covering <span data-cr-area-postcode>M16</span> include David Andrews Homes (Upper Chorlton Road, Old Trafford), Trading Places (Stretford), Bridgfords and Jordan Fishwick (Chorlton) and Park Lane Estates (Urmston).</p>
+                    </details>
+                    <details class="cr-faq__item">
+                      <summary><h3 class="cr-faq__q">Are there local community groups in <span data-cr-area-name>Old Trafford</span>?</h3><svg class="cr-faq__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6l6 -6"/></svg></summary>
+                      <p class="cr-faq__a">Yes. Local Facebook pages include M16 Old Trafford Group, My Stretford, Trafford Community News, St John&#x27;s Centre Old Trafford and My Trafford from the Manchester Evening News.</p>
+                    </details>
+                    <details class="cr-faq__item">
+                      <summary><h3 class="cr-faq__q">Do I need a party wall surveyor for building work in <span data-cr-area-name>Old Trafford</span>?</h3><svg class="cr-faq__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6l6 -6"/></svg></summary>
+                      <p class="cr-faq__a">If you plan work on a shared wall, a loft conversion or an extension next to a neighbour, or excavation near their foundations, the Party Wall etc. Act 1996 may require you to serve notice. Corelain&#x27;s party wall surveyors handle notices and awards across Greater Manchester.</p>
+                    </details>
+                </div>
+                </div>
+              </div>
+            </div>
+          </section>
+          <!-- FAQ:END -->
+
+        </div>
+      </main>
+      <footer class="ax-footer">
+        <div class="ax-footer__left">
+          <span class="ax-footer__copy">© 2026 Corelain Dashboard</span>
+          <span class="ax-footer__sep" aria-hidden="true">·</span>
+          <span class="ax-footer__version ax-mono">v1.0.0</span>
+        </div>
+      </footer>
+    </div>
+  </div>
+  <!-- Toasts for page actions (shared $store.toasts queue) -->
+  <div class="ax-toast-region ax-toast-region--bottom-end" x-data aria-live="polite" aria-atomic="false">
+    <template x-for="t in $store.toasts.items" :key="t.id">
+      <div class="ax-toast" :class="'ax-toast--' + (t.tone || 'info')" role="status" x-transition.opacity.duration.200ms>
+        <svg class="ax-toast__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0"/><path d="M9 12l2 2l4 -4"/></svg>
+        <div class="ax-toast__content">
+          <p class="ax-toast__title" x-text="t.title || 'Done'"></p>
+          <p class="ax-toast__message" x-text="t.msg" x-show="t.msg"></p>
+        </div>
+        <button type="button" class="ax-toast__dismiss" @click="$store.toasts.dismiss(t.id)" aria-label="Dismiss notification">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6l-12 12"/><path d="M6 6l12 12"/></svg>
+        </button>
+      </div>
+    </template>
+  </div>
+  <!-- Structured data (schema.org) — Organization, WebSite, WebPage, Place, Dataset, FAQPage, estate agents -->
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "https://corelain-radar.vercel.app/#org",
+      "name": "Corelain",
+      "url": "https://www.corelain.com/",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://corelain-radar.vercel.app/images/logo-light.png",
+        "width": 579,
+        "height": 108
+      },
+      "sameAs": [
+        "https://www.corelain.com/"
+      ],
+      "areaServed": {
+        "@type": "AdministrativeArea",
+        "name": "Greater Manchester"
+      }
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://corelain-radar.vercel.app/#website",
+      "url": "https://corelain-radar.vercel.app/",
+      "name": "Corelain Area Radar",
+      "inLanguage": "en-GB",
+      "publisher": {
+        "@id": "https://corelain-radar.vercel.app/#org"
+      }
+    },
+    {
+      "@type": "WebPage",
+      "@id": "https://corelain-radar.vercel.app/#webpage",
+      "url": "https://corelain-radar.vercel.app/",
+      "name": "Old Trafford M16: House Prices, Crime & Schools | Corelain",
+      "description": "Old Trafford, Manchester (M16): average house price £316,545 (+1.6%), £360 per sq ft, crime, Ofsted schools, Metrolink, flood risk and regeneration.",
+      "inLanguage": "en-GB",
+      "isPartOf": {
+        "@id": "https://corelain-radar.vercel.app/#website"
+      },
+      "about": {
+        "@id": "https://corelain-radar.vercel.app/#place"
+      },
+      "primaryImageOfPage": {
+        "@type": "ImageObject",
+        "url": "https://corelain-radar.vercel.app/images/og-old-trafford.jpg",
+        "width": 1200,
+        "height": 630
+      },
+      "dateModified": "2026-10-07",
+      "publisher": {
+        "@id": "https://corelain-radar.vercel.app/#org"
+      },
+      "mainEntity": {
+        "@id": "https://corelain-radar.vercel.app/#dataset"
+      }
+    },
+    {
+      "@type": "Place",
+      "@id": "https://corelain-radar.vercel.app/#place",
+      "name": "Old Trafford",
+      "address": {
+        "@type": "PostalAddress",
+        "addressLocality": "Manchester",
+        "addressRegion": "Greater Manchester",
+        "postalCode": "M16",
+        "addressCountry": "GB"
+      },
+      "geo": {
+        "@type": "GeoCoordinates",
+        "latitude": 53.4631,
+        "longitude": -2.2913
+      },
+      "containedInPlace": {
+        "@type": "AdministrativeArea",
+        "name": "Trafford",
+        "containedInPlace": {
+          "@type": "AdministrativeArea",
+          "name": "Greater Manchester"
+        }
+      },
+      "sameAs": [
+        "https://en.wikipedia.org/wiki/Old_Trafford_(area)"
+      ]
+    },
+    {
+      "@type": "Dataset",
+      "@id": "https://corelain-radar.vercel.app/#dataset",
+      "name": "Old Trafford (M16) property market and neighbourhood statistics",
+      "description": "House prices, annual growth, price per square foot, violent crime rate, Ofsted school ratings, transport access, flood risk, radon and air quality for Old Trafford, Manchester (M16), compiled from HM Land Registry, ONS, Ofsted, Environment Agency and UKHSA data.",
+      "url": "https://corelain-radar.vercel.app/",
+      "creator": {
+        "@id": "https://corelain-radar.vercel.app/#org"
+      },
+      "spatialCoverage": {
+        "@id": "https://corelain-radar.vercel.app/#place"
+      },
+      "temporalCoverage": "2016/2026",
+      "dateModified": "2026-10-07",
+      "inLanguage": "en-GB",
+      "isAccessibleForFree": true,
+      "isBasedOn": [
+        "https://propertyinsightsuk.co.uk/postcodes/m16/",
+        "https://www.ons.gov.uk/visualisations/housingpriceslocal/E08000009/",
+        "https://housemetric.co.uk/analysis/sector/M16-7/Old-Trafford",
+        "https://reports.ofsted.gov.uk/",
+        "https://check-long-term-flood-risk.service.gov.uk/postcode"
+      ],
+      "variableMeasured": [
+        {
+          "@type": "PropertyValue",
+          "name": "Average property value (12 months to 31 Mar 2026)",
+          "value": 316545,
+          "unitText": "GBP"
+        },
+        {
+          "@type": "PropertyValue",
+          "name": "Annual house price growth",
+          "value": 1.6,
+          "unitText": "percent"
+        },
+        {
+          "@type": "PropertyValue",
+          "name": "Median price per square foot (M16 0)",
+          "value": 360,
+          "unitText": "GBP per sq ft"
+        },
+        {
+          "@type": "PropertyValue",
+          "name": "Violent crimes per 1,000 residents (Trafford, year to Sep 2025)",
+          "value": 27
+        },
+        {
+          "@type": "PropertyValue",
+          "name": "School rating (nearest schools, Ofsted-derived)",
+          "value": 8.0,
+          "maxValue": 10
+        },
+        {
+          "@type": "PropertyValue",
+          "name": "Transport score",
+          "value": 88,
+          "maxValue": 100
+        },
+        {
+          "@type": "PropertyValue",
+          "name": "Long-term flood risk",
+          "value": "Low"
+        },
+        {
+          "@type": "PropertyValue",
+          "name": "Radon potential class",
+          "value": 1,
+          "maxValue": 6
+        }
+      ]
+    },
+    {
+      "@type": "FAQPage",
+      "@id": "https://corelain-radar.vercel.app/#faq",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is the average house price in Old Trafford (M16)?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The average sold price in M16 was £316,545 in the 12 months to 31 March 2026, based on 191 sales (HM Land Registry)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Are house prices in Old Trafford going up?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Prices rose 1.6% on the previous 12 months, slightly ahead of UK annual growth of 1.4% (UK HPI, July 2026). Over 2016–2025 the yearly average rose from £176,750 to £322,464, about 82%."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How much does property cost per square foot in Old Trafford?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "About £360 per square foot (£3,880 per m²), the median for the local postcode sector."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How much do flats and houses cost in Old Trafford?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Over the last three years flats averaged £172,921 (357 sales), semi-detached homes £427,964 (246 sales) and detached homes £481,201 (37 sales). Detached figures rest on very few sales, so treat them with caution."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is Old Trafford a safe area?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Old Trafford sits in Trafford borough, which recorded 27 violent crimes per 1,000 residents in the year to September 2025 — one of the lowest rates in the North West (ONS). Old Trafford is among the more deprived parts of the borough, so street-level rates may differ from the borough average."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How does crime in Trafford compare with Manchester?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Trafford's violent crime rate of 27 per 1,000 residents is about 48% lower than Manchester's 52 per 1,000 (ONS, year to September 2025)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Why is there no street-level crime data for Old Trafford?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Greater Manchester Police does not currently publish street-level crime records to police.uk, so neighbourhood rates for categories such as burglary or vehicle crime are not available. The borough figure is the most reliable published measure."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What are the best primary schools near Old Trafford?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Seymour Park Community Primary, about 1.0 mile away, is rated Outstanding by Ofsted (December 2023). Old Trafford Community Academy, about 1.1 miles away, was inspected in October 2024."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Which secondary schools are near Old Trafford?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Stretford High School (about 0.9 miles), Stretford Grammar School (a selective grammar, about 1.2 miles) and Trinity CofE High School (ages 11–19, about 1.8 miles) are all rated Good by Ofsted."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Why does Old Trafford Community Academy have no Ofsted grade?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Ofsted stopped giving a one-word overall grade for inspections from September 2024. The academy's October 2024 report covers each area separately instead."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do you get from Old Trafford to Manchester city centre?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Walk about 10 minutes to Old Trafford Metrolink stop, then take the Altrincham line tram to St Peter's Square in about 10 minutes — roughly 20 minutes door to door."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How often do trams run from Old Trafford?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Trams on the Altrincham line run every 6–12 minutes. Trafford Bar stop is also close by."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is Old Trafford close to the motorway?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Junction 7 of the M60 (Stretford) is about 2.3 miles away."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Does the Manchester United Football Ground station open every day?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No. Manchester United Football Ground station opens on matchdays only."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is Old Trafford at risk of flooding?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Long-term flood risk is low overall. The Environment Agency rates the risk from rivers and the sea as very low, and from surface water and groundwater as low."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Does the Manchester Ship Canal increase flood risk?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The canal is nearby, and flooding from it is modelled in the Manchester–Salford–Trafford Strategic Flood Risk Assessment (SFRA). Most of the area lies outside Environment Agency high and medium risk zones."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How can I check the flood risk for a specific property?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Surface-water risk varies from street to street, so check the exact postcode on the Environment Agency's long-term flood risk service (check-long-term-flood-risk.service.gov.uk) before you buy."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is radon a concern in Old Trafford?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No. Old Trafford is in radon potential class 1 of 6 — the lowest — where fewer than 1% of homes are above the action level."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is Old Trafford in a coal mining area?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "This has not been verified yet. Check the property with the Coal Authority before purchase via gov.uk/check-if-property-is-affected-by-coal-mining."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is there a risk of ground subsidence in Old Trafford?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Natural ground subsidence risk is rated low."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What is the air quality like in Old Trafford?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Old Trafford lies within or next to Trafford's A56 Chester Road Air Quality Management Area. Roadside nitrogen dioxide averaged about 30 µg/m³ a year, below the legal limit of 40."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What is an Air Quality Management Area (AQMA)?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "An AQMA is an area where a council has found that a national air quality objective may not be met, and has to act on it. In Old Trafford it covers the busy A56 Chester Road corridor."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Where do the live air quality readings come from?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The live PM2.5, NO₂, PM10 and European AQI readings come from the Open-Meteo air quality model. They are modelled values for the area, not readings from a single roadside monitor."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What is being built in Old Trafford?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The Old Trafford Regeneration Mayoral Development Corporation, launched in January 2026, covers a 370-acre district with about 15,000 new homes. Manchester United secured land for a new 100,000-seat stadium in June 2026, and the Trafford Wharfside masterplan was published in July 2026."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "When will the new Manchester United stadium open?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No opening date has been set. In September 2026 the corporation's chair, Lord Coe, said the timescale is uncertain while scoping and land acquisition continue."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How many homes and jobs will the regeneration bring?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The plans aim for about 15,000 homes and 48,000 local jobs."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is Old Trafford in a conservation area?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The stadium area is outside a conservation area. The nearest are the Empress Conservation Area (Chester Road / Empress Street) and the Longford Conservation Area (Longford Park), both designated in 1996."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Are there listed buildings in Old Trafford?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Trafford Town Hall nearby is a Grade II listed building."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is Old Trafford in the Green Belt?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No. There is no Article 4 direction in the Longford Conservation Area either."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Which estate agents cover Old Trafford?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Agents covering M16 include David Andrews Homes (Upper Chorlton Road, Old Trafford), Trading Places (Stretford), Bridgfords and Jordan Fishwick (Chorlton) and Park Lane Estates (Urmston)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Are there local community groups in Old Trafford?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Local Facebook pages include M16 Old Trafford Group, My Stretford, Trafford Community News, St John's Centre Old Trafford and My Trafford from the Manchester Evening News."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Do I need a party wall surveyor for building work in Old Trafford?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "If you plan work on a shared wall, a loft conversion or an extension next to a neighbour, or excavation near their foundations, the Party Wall etc. Act 1996 may require you to serve notice. Corelain's party wall surveyors handle notices and awards across Greater Manchester."
+          }
+        }
+      ]
+    },
+    {
+      "@type": "ItemList",
+      "@id": "https://corelain-radar.vercel.app/#estate-agents",
+      "name": "Estate agents covering Old Trafford (M16)",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "item": {
+            "@type": "RealEstateAgent",
+            "name": "David Andrews Homes",
+            "address": {
+              "@type": "PostalAddress",
+              "streetAddress": "274 Upper Chorlton Road",
+              "addressLocality": "Manchester",
+              "postalCode": "M16 0BN",
+              "addressCountry": "GB"
+            }
+          }
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "item": {
+            "@type": "RealEstateAgent",
+            "name": "Trading Places Stretford",
+            "address": {
+              "@type": "PostalAddress",
+              "streetAddress": "164 Barton Road",
+              "addressLocality": "Stretford",
+              "postalCode": "M32 8DP",
+              "addressCountry": "GB"
+            }
+          }
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "item": {
+            "@type": "RealEstateAgent",
+            "name": "Bridgfords Chorlton",
+            "address": {
+              "@type": "PostalAddress",
+              "streetAddress": "561 Barlow Moor Road",
+              "addressLocality": "Chorlton",
+              "postalCode": "M21 8AN",
+              "addressCountry": "GB"
+            }
+          }
+        },
+        {
+          "@type": "ListItem",
+          "position": 4,
+          "item": {
+            "@type": "RealEstateAgent",
+            "name": "Jordan Fishwick",
+            "address": {
+              "@type": "PostalAddress",
+              "streetAddress": "410-412 Barlow Moor Road",
+              "addressLocality": "Manchester",
+              "postalCode": "M21 8AD",
+              "addressCountry": "GB"
+            }
+          }
+        },
+        {
+          "@type": "ListItem",
+          "position": 5,
+          "item": {
+            "@type": "RealEstateAgent",
+            "name": "Park Lane Estates",
+            "address": {
+              "@type": "PostalAddress",
+              "streetAddress": "27 Flixton Road",
+              "addressLocality": "Urmston",
+              "postalCode": "M41 5EL",
+              "addressCountry": "GB"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
+  </script>
+  <!--
+    Vireo — COMMAND PALETTE  ·  #ax-command
+    ────────────────────────────────────────────────────────────────────────────
+    The panel behind the header's ⌘K search trigger, and behind its 38px icon
+    twin on phones. Opened by:
+      · the .ax-search button in partials/header.html / partials/app-bar.html,
+        which raises `ax-command-open`,
+      · ⌘K / Ctrl-K anywhere on the page,
+      · any element carrying [data-ax-command-open].
+  
+    Everything below the input is EMITTED BY js/core/command-palette.js into
+    .ax-command__results — it fuzzy-searches the same nav manifest the sidebar
+    filter uses, groups the hits (Dashboards / Apps / Pages / Actions) and drives
+    ↑↓/↵/esc. This file is only the shell it fills; the module toggles `.is-open`
+    plus the `hidden` attribute on the root, so the resting state here is hidden.
+    Body scroll-lock and the focus trap are the module's job too.
+  
+    Placed at BODY level (next to the customizer), never inside .ax-header — the
+    header's `backdrop-filter` makes it a containing block for fixed descendants,
+    which would pin this overlay inside the bar.
+  -->
+  <div id="ax-command" class="ax-command" role="dialog" aria-modal="true" aria-labelledby="ax-command-title" aria-hidden="true" hidden>
+  
+    <!-- Click-catch scrim, painted behind the panel. -->
+    <button type="button" class="ax-command__backdrop" data-ax-command-backdrop aria-label="Close search" tabindex="-1"></button>
+  
+    <div class="ax-command__panel">
+      <h2 id="ax-command-title" class="ax-visually-hidden">Search or jump to</h2>
+  
+      <!-- ===== QUERY ROW ===== -->
+      <div class="ax-command__input">
+        <svg class="ax-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" width="24" height="24" aria-hidden="true"><path d="M3 10a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" /><path d="M21 21l-6 -6" /></svg>
+        <input type="text" data-ax-command-input placeholder="Search areas and postcodes…" aria-label="Search areas and postcodes" aria-controls="ax-command-results" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" />
+        <kbd class="ax-command__keycap ax-command__keycap--esc">esc</kbd>
+        <button type="button" class="ax-icon-btn ax-command__close" data-ax-command-close aria-label="Close search">
+          <svg class="ax-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" width="24" height="24" aria-hidden="true"><path d="M18 6l-12 12" /><path d="M6 6l12 12" /></svg>
+        </button>
+      </div>
+  
+      <!-- ===== RESULTS (filled by command-palette.js) ===== -->
+      <div id="ax-command-results" class="ax-command__results" data-ax-command-results role="listbox" aria-label="Search results"></div>
+  
+      <!-- ===== KEY HINTS (pointer/keyboard only — hidden on phones) ===== -->
+      <div class="ax-command__foot" aria-hidden="true">
+        <span class="ax-command__hint"><kbd class="ax-command__keycap">↑</kbd><kbd class="ax-command__keycap">↓</kbd>navigate</span>
+        <span class="ax-command__hint"><kbd class="ax-command__keycap">↵</kbd>open</span>
+        <span class="ax-command__hint"><kbd class="ax-command__keycap">esc</kbd>close</span>
+      </div>
+    </div>
+  </div>
+  <!-- ============================================================ -->
+  <!-- VIREO RUNTIME — single ES module entry.                      -->
+  <!-- Boots Alpine + plugins, registers shell components           -->
+  <!-- (axShell, axSidebar, axHeader, axDropdown, axCommand,        -->
+  <!-- axCustomizer), fetches /src/data/nav-manifest.json, and      -->
+  <!-- wires active-trail, breadcrumb, command palette, theme.      -->
+  <!-- ============================================================ -->
+  
+  <!-- Per-page hook (optional):
+       Pages that need extra behavior (charts, datatables, editors) add a
+       deferred module AFTER this line, e.g.:
+       <script type="module" src="/src/js/pages/dashboards-sales.js"></script>
+       Keep page scripts deferred/module so they run after vireo.js boots. -->
+</body>
+</html>
