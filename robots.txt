@@ -22,4 +22,4 @@ Allow: /
 User-agent: Applebot-Extended
 Allow: /
 
-Sitemap: https://corelain-radar.vercel.app/sitemap.xml
+Sitemap: https://corelainradarv2.vercel.app/sitemap.xml

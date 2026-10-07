@@ -2,7 +2,7 @@
 
 > Area guide for Old Trafford, M16 (Trafford, Greater Manchester, UK): house prices, price growth, price per square foot, crime, schools, transport, flood risk, radon/mining, air quality, planning and regeneration. Built by Corelain (https://www.corelain.com/), a Manchester building surveying and property consultancy. Figures last reviewed 2026-10-07.
 
-Page: https://corelain-radar.vercel.app/
+Page: https://corelainradarv2.vercel.app/
 
 ## Key facts
 

@@ -108,26 +108,26 @@
 <title>Old Trafford M16: House Prices, Crime &amp; Schools | Corelain</title>
 <meta name="description" content="Old Trafford (M16), Manchester: average house price £316,545 (+1.6%), £360/sq ft, crime, Ofsted schools, Metrolink, flood risk and regeneration." />
 <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
-<link rel="canonical" href="https://corelain-radar.vercel.app/" />
-<link rel="alternate" hreflang="en-GB" href="https://corelain-radar.vercel.app/" />
-<link rel="alternate" hreflang="x-default" href="https://corelain-radar.vercel.app/" />
+<link rel="canonical" href="https://corelainradarv2.vercel.app/" />
+<link rel="alternate" hreflang="en-GB" href="https://corelainradarv2.vercel.app/" />
+<link rel="alternate" hreflang="x-default" href="https://corelainradarv2.vercel.app/" />
 <meta name="author" content="Corelain" />
 
 <!-- Open Graph / Twitter -->
 <meta property="og:type" content="website" />
 <meta property="og:site_name" content="Corelain Area Radar" />
 <meta property="og:locale" content="en_GB" />
-<meta property="og:url" content="https://corelain-radar.vercel.app/" />
+<meta property="og:url" content="https://corelainradarv2.vercel.app/" />
 <meta property="og:title" content="Old Trafford (M16) area guide — prices, crime, schools &amp; risk" />
 <meta property="og:description" content="Old Trafford (M16), Manchester: average house price £316,545 (+1.6%), £360/sq ft, crime, Ofsted schools, Metrolink, flood risk and regeneration." />
-<meta property="og:image" content="https://corelain-radar.vercel.app/images/og-old-trafford.jpg" />
+<meta property="og:image" content="https://corelainradarv2.vercel.app/images/og-old-trafford.jpg" />
 <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="630" />
 <meta property="og:image:alt" content="Street in central Manchester — Corelain Area Radar for Old Trafford" />
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="Old Trafford (M16) area guide — prices, crime, schools &amp; risk" />
 <meta name="twitter:description" content="Old Trafford (M16), Manchester: average house price £316,545 (+1.6%), £360/sq ft, crime, Ofsted schools, Metrolink, flood risk and regeneration." />
-<meta name="twitter:image" content="https://corelain-radar.vercel.app/images/og-old-trafford.jpg" />
+<meta name="twitter:image" content="https://corelainradarv2.vercel.app/images/og-old-trafford.jpg" />
 
 <!-- Local / geo signals -->
 <meta name="geo.region" content="GB-TRF" />
@@ -153,8 +153,8 @@
 <link rel="preload" as="image" href="/images/hero-1280.jpg" imagesrcset="/images/hero-1280.jpg 1280w, /images/hero-1920.jpg 1920w" imagesizes="(max-width: 1440px) 100vw, 1440px" media="(min-width: 641px)" fetchpriority="high" />
 
 <!-- Compiled application stylesheet (token chain + Tailwind v4 @theme bridge + shell/components) -->
-  <script type="module" crossorigin src="/assets/index-BVt4xd0Q.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/index-DYMhddCq.css">
+  <script type="module" crossorigin src="/assets/index-Cdrp1ywS.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-CyNVMtSL.css">
 </head>
 <body>
   <div class="ax-ambient" aria-hidden="true"><i></i></div>
@@ -1447,6 +1447,103 @@
       </footer>
     </div>
   </div>
+<!-- vercel-extras/back-to-v1-popup.html — inserted into vercel-ready ONLY by
+     ../build-vercel-ready.sh (never part of CRADAR). "Back to v1.0" popup:
+     the previous version's address is the data-v11-url attribute below. -->
+<style>
+/* "v1.1 is ready" announcement card — bottom-right on desktop, bottom sheet on phones */
+.cr-v11 {
+  position: fixed; z-index: 70;
+  inset-inline-end: var(--cr-gutter, 24px); inset-block-end: 24px;
+  inline-size: min(360px, calc(100vw - 32px));
+  padding: var(--ax-space-6);
+  border-radius: var(--ax-radius-xl);
+  color: #fff;
+  background:
+    radial-gradient(120% 90% at 100% 0%, rgb(255 255 255 / 0.12), transparent 55%),
+    linear-gradient(150deg, #0b6e10 0%, #005603 50%, #013a03 100%);
+  box-shadow: 0 24px 60px -20px rgb(0 40 2 / 0.55), 0 8px 20px -8px rgb(0 0 0 / 0.25);
+}
+.cr-v11--enter { transition: opacity .25s ease, transform .25s cubic-bezier(.2, .8, .2, 1); }
+.cr-v11--from { opacity: 0; transform: translateY(16px); }
+.cr-v11--to { opacity: 1; transform: translateY(0); }
+.cr-v11__close {
+  position: absolute; inset-block-start: 12px; inset-inline-end: 12px;
+  display: grid; place-items: center; inline-size: 32px; block-size: 32px;
+  border: 0; border-radius: 50%; background: rgb(255 255 255 / 0.12); color: #fff; cursor: pointer;
+}
+.cr-v11__close:hover { background: rgb(255 255 255 / 0.22); }
+.cr-v11__close svg { inline-size: 16px; block-size: 16px; }
+.cr-v11__head { display: flex; align-items: center; gap: var(--ax-space-3); margin-block-end: var(--ax-space-4); }
+.cr-v11__mark { display: grid; place-items: center; inline-size: 44px; block-size: 44px; border-radius: 12px; background: rgb(255 255 255 / 0.12); }
+.cr-v11__mark img { inline-size: 26px; block-size: auto; }
+.cr-v11__badge {
+  padding: 3px 10px; border-radius: 999px;
+  font-size: 11px; font-weight: var(--ax-weight-semibold, 600); letter-spacing: 0.04em; text-transform: uppercase;
+  color: #005603; background: #b9f0b5;
+}
+.cr-v11__title { margin: 0; font-family: var(--ax-font-display); font-size: var(--ax-text-xl, 1.25rem); font-weight: 700; line-height: 1.2; color: #fff; }
+.cr-v11__text { margin: 6px 0 var(--ax-space-5); font-size: var(--ax-text-sm); color: rgb(255 255 255 / 0.82); }
+.cr-v11__actions { display: flex; gap: var(--ax-space-2); }
+.cr-v11__btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  block-size: 42px; padding-inline: var(--ax-space-4);
+  border-radius: var(--ax-radius-md); border: 0;
+  font: inherit; font-size: var(--ax-text-sm); font-weight: var(--ax-weight-semibold, 600);
+  text-decoration: none; cursor: pointer;
+}
+.cr-v11__btn svg { inline-size: 16px; block-size: 16px; }
+.cr-v11__btn--primary { flex: 1; color: #005603; background: #fff; }
+.cr-v11__btn--primary:hover { background: #ecfbe9; }
+.cr-v11__btn--ghost { color: #fff; background: rgb(255 255 255 / 0.12); }
+.cr-v11__btn--ghost:hover { background: rgb(255 255 255 / 0.2); }
+.cr-v11 :focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+@media (max-width: 576px) {
+  .cr-v11 { inset-inline: 12px; inset-block-end: 12px; inline-size: auto; padding: var(--ax-space-5); }
+}
+@media (prefers-reduced-motion: reduce) { .cr-v11--enter { transition: opacity .2s ease; } .cr-v11--from { transform: none; } }
+</style>
+  <!-- "Back to v1.0" note — small non-blocking card (no full-screen overlay,
+       so it doesn't count as an intrusive interstitial); shown once per visit.
+       Target address: data-v11-url attribute below -->
+  <div class="cr-v11" data-v11-url="https://corelainradar.vercel.app" x-data="{
+         open: false,
+         url: '',
+         init() {
+           this.url = (this.$el.dataset.v11Url || '').trim();
+           try { if (sessionStorage.getItem('cr:v1-back-seen')) return; } catch (e) {}
+           setTimeout(() => { this.open = true; }, 1200);
+         },
+         go() {
+           if (this.url) { window.location.href = this.url; } else { this.close(); }
+         },
+         close() {
+           this.open = false;
+           try { sessionStorage.setItem('cr:v1-back-seen', '1'); } catch (e) {}
+         }
+       }"
+       x-show="open" x-cloak
+       x-transition:enter="cr-v11--enter" x-transition:enter-start="cr-v11--from" x-transition:enter-end="cr-v11--to"
+       x-transition:leave="cr-v11--enter" x-transition:leave-start="cr-v11--to" x-transition:leave-end="cr-v11--from"
+       @keydown.escape.window="open && close()"
+       role="dialog" aria-modal="false" aria-labelledby="cr-v11-title" aria-describedby="cr-v11-text">
+    <button type="button" class="cr-v11__close" @click="close()" aria-label="Close">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6l-12 12"/><path d="M6 6l12 12"/></svg>
+    </button>
+    <div class="cr-v11__head">
+      <span class="cr-v11__mark"><img src="/images/logo-mark-dark.png" alt="" width="120" height="93"></span>
+      <span class="cr-v11__badge">Previous version</span>
+    </div>
+    <h2 class="cr-v11__title" id="cr-v11-title">Want to go back to v1.0?</h2>
+    <p class="cr-v11__text" id="cr-v11-text">You're viewing the new Area Radar v1.1. The previous version is still available if you'd like to return to it.</p>
+    <div class="cr-v11__actions">
+      <button type="button" class="cr-v11__btn cr-v11__btn--primary" @click="go()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l14 0"/><path d="M5 12l6 6"/><path d="M5 12l6 -6"/></svg>Back to v1.0</button>
+      <button type="button" class="cr-v11__btn cr-v11__btn--ghost" @click="close()">Stay on v1.1</button>
+    </div>
+  </div>
+
+
+
   <!-- Toasts for page actions (shared $store.toasts queue) -->
   <div class="ax-toast-region ax-toast-region--bottom-end" x-data aria-live="polite" aria-atomic="false">
     <template x-for="t in $store.toasts.items" :key="t.id">
@@ -1469,12 +1566,12 @@
   "@graph": [
     {
       "@type": "Organization",
-      "@id": "https://corelain-radar.vercel.app/#org",
+      "@id": "https://corelainradarv2.vercel.app/#org",
       "name": "Corelain",
       "url": "https://www.corelain.com/",
       "logo": {
         "@type": "ImageObject",
-        "url": "https://corelain-radar.vercel.app/images/logo-light.png",
+        "url": "https://corelainradarv2.vercel.app/images/logo-light.png",
         "width": 579,
         "height": 108
       },
@@ -1488,44 +1585,44 @@
     },
     {
       "@type": "WebSite",
-      "@id": "https://corelain-radar.vercel.app/#website",
-      "url": "https://corelain-radar.vercel.app/",
+      "@id": "https://corelainradarv2.vercel.app/#website",
+      "url": "https://corelainradarv2.vercel.app/",
       "name": "Corelain Area Radar",
       "inLanguage": "en-GB",
       "publisher": {
-        "@id": "https://corelain-radar.vercel.app/#org"
+        "@id": "https://corelainradarv2.vercel.app/#org"
       }
     },
     {
       "@type": "WebPage",
-      "@id": "https://corelain-radar.vercel.app/#webpage",
-      "url": "https://corelain-radar.vercel.app/",
+      "@id": "https://corelainradarv2.vercel.app/#webpage",
+      "url": "https://corelainradarv2.vercel.app/",
       "name": "Old Trafford M16: House Prices, Crime & Schools | Corelain",
       "description": "Old Trafford, Manchester (M16): average house price £316,545 (+1.6%), £360 per sq ft, crime, Ofsted schools, Metrolink, flood risk and regeneration.",
       "inLanguage": "en-GB",
       "isPartOf": {
-        "@id": "https://corelain-radar.vercel.app/#website"
+        "@id": "https://corelainradarv2.vercel.app/#website"
       },
       "about": {
-        "@id": "https://corelain-radar.vercel.app/#place"
+        "@id": "https://corelainradarv2.vercel.app/#place"
       },
       "primaryImageOfPage": {
         "@type": "ImageObject",
-        "url": "https://corelain-radar.vercel.app/images/og-old-trafford.jpg",
+        "url": "https://corelainradarv2.vercel.app/images/og-old-trafford.jpg",
         "width": 1200,
         "height": 630
       },
       "dateModified": "2026-10-07",
       "publisher": {
-        "@id": "https://corelain-radar.vercel.app/#org"
+        "@id": "https://corelainradarv2.vercel.app/#org"
       },
       "mainEntity": {
-        "@id": "https://corelain-radar.vercel.app/#dataset"
+        "@id": "https://corelainradarv2.vercel.app/#dataset"
       }
     },
     {
       "@type": "Place",
-      "@id": "https://corelain-radar.vercel.app/#place",
+      "@id": "https://corelainradarv2.vercel.app/#place",
       "name": "Old Trafford",
       "address": {
         "@type": "PostalAddress",
@@ -1553,15 +1650,15 @@
     },
     {
       "@type": "Dataset",
-      "@id": "https://corelain-radar.vercel.app/#dataset",
+      "@id": "https://corelainradarv2.vercel.app/#dataset",
       "name": "Old Trafford (M16) property market and neighbourhood statistics",
       "description": "House prices, annual growth, price per square foot, violent crime rate, Ofsted school ratings, transport access, flood risk, radon and air quality for Old Trafford, Manchester (M16), compiled from HM Land Registry, ONS, Ofsted, Environment Agency and UKHSA data.",
-      "url": "https://corelain-radar.vercel.app/",
+      "url": "https://corelainradarv2.vercel.app/",
       "creator": {
-        "@id": "https://corelain-radar.vercel.app/#org"
+        "@id": "https://corelainradarv2.vercel.app/#org"
       },
       "spatialCoverage": {
-        "@id": "https://corelain-radar.vercel.app/#place"
+        "@id": "https://corelainradarv2.vercel.app/#place"
       },
       "temporalCoverage": "2016/2026",
       "dateModified": "2026-10-07",
@@ -1625,7 +1722,7 @@
     },
     {
       "@type": "FAQPage",
-      "@id": "https://corelain-radar.vercel.app/#faq",
+      "@id": "https://corelainradarv2.vercel.app/#faq",
       "mainEntity": [
         {
           "@type": "Question",
@@ -1887,7 +1984,7 @@
     },
     {
       "@type": "ItemList",
-      "@id": "https://corelain-radar.vercel.app/#estate-agents",
+      "@id": "https://corelainradarv2.vercel.app/#estate-agents",
       "name": "Estate agents covering Old Trafford (M16)",
       "itemListElement": [
         {
