@@ -1447,26 +1447,36 @@
       </footer>
     </div>
   </div>
-<!-- vercel-extras/back-to-v1-popup.html — inserted into vercel-ready ONLY by
-     ../build-vercel-ready.sh (never part of CRADAR). "Back to v1.0" popup:
-     the previous version's address is the data-v11-url attribute below. -->
+<!-- "New version" popup — centered modal over a blurred, dimmed page.
+     Where "Yes, show me" goes: set data-v11-url on the .cr-v11 element below
+     (empty = the button just closes the popup). -->
 <style>
-/* "v1.1 is ready" announcement card — bottom-right on desktop, bottom sheet on phones */
+/* "v1.3.0 is ready" announcement — centered card over a blurred, dimmed page */
 .cr-v11 {
-  position: fixed; z-index: 70;
-  inset-inline-end: var(--cr-gutter, 24px); inset-block-end: 24px;
-  inline-size: min(360px, calc(100vw - 32px));
+  position: fixed; z-index: 200; inset: 0;
+  display: grid; place-items: center;
+  padding: 16px;
+  background: rgb(2 16 3 / 0.62);
+  -webkit-backdrop-filter: blur(10px) saturate(120%);
+  backdrop-filter: blur(10px) saturate(120%);
+}
+.cr-v11__card {
+  position: relative;
+  inline-size: min(420px, 100%);
   padding: var(--ax-space-6);
   border-radius: var(--ax-radius-xl);
   color: #fff;
   background:
     radial-gradient(120% 90% at 100% 0%, rgb(255 255 255 / 0.12), transparent 55%),
     linear-gradient(150deg, #0b6e10 0%, #005603 50%, #013a03 100%);
-  box-shadow: 0 24px 60px -20px rgb(0 40 2 / 0.55), 0 8px 20px -8px rgb(0 0 0 / 0.25);
+  box-shadow: 0 32px 80px -24px rgb(0 40 2 / 0.65), 0 8px 20px -8px rgb(0 0 0 / 0.35);
 }
-.cr-v11--enter { transition: opacity .25s ease, transform .25s cubic-bezier(.2, .8, .2, 1); }
-.cr-v11--from { opacity: 0; transform: translateY(16px); }
-.cr-v11--to { opacity: 1; transform: translateY(0); }
+.cr-v11--enter { transition: opacity .25s ease; }
+.cr-v11--enter .cr-v11__card { transition: opacity .25s ease, transform .25s cubic-bezier(.2, .8, .2, 1); }
+.cr-v11--from { opacity: 0; }
+.cr-v11--from .cr-v11__card { opacity: 0; transform: translateY(12px) scale(.97); }
+.cr-v11--to { opacity: 1; }
+.cr-v11--to .cr-v11__card { opacity: 1; transform: none; }
 .cr-v11__close {
   position: absolute; inset-block-start: 12px; inset-inline-end: 12px;
   display: grid; place-items: center; inline-size: 32px; block-size: 32px;
@@ -1499,19 +1509,21 @@
 .cr-v11__btn--ghost:hover { background: rgb(255 255 255 / 0.2); }
 .cr-v11 :focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 @media (max-width: 576px) {
-  .cr-v11 { inset-inline: 12px; inset-block-end: 12px; inline-size: auto; padding: var(--ax-space-5); }
+  .cr-v11__card { inline-size: 100%; padding: var(--ax-space-5); }
 }
-@media (prefers-reduced-motion: reduce) { .cr-v11--enter { transition: opacity .2s ease; } .cr-v11--from { transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .cr-v11--enter, .cr-v11--enter .cr-v11__card { transition: opacity .2s ease; }
+  .cr-v11--from .cr-v11__card { transform: none; }
+}
 </style>
-  <!-- "Back to v1.0" note — small non-blocking card (no full-screen overlay,
-       so it doesn't count as an intrusive interstitial); shown once per visit.
-       Target address: data-v11-url attribute below -->
+  <!-- "v1.3.0 is ready" announcement — centered dialog with a blurred backdrop;
+       shown once per visit. Target address: data-v11-url attribute below -->
   <div class="cr-v11" data-v11-url="https://corelainradar3.vercel.app/" x-data="{
          open: false,
          url: '',
          init() {
            this.url = (this.$el.dataset.v11Url || '').trim();
-           try { if (sessionStorage.getItem('cr:v1-back-seen')) return; } catch (e) {}
+           try { if (sessionStorage.getItem('cr:v130-seen')) return; } catch (e) {}
            setTimeout(() => { this.open = true; }, 1200);
          },
          go() {
@@ -1519,26 +1531,29 @@
          },
          close() {
            this.open = false;
-           try { sessionStorage.setItem('cr:v1-back-seen', '1'); } catch (e) {}
+           try { sessionStorage.setItem('cr:v130-seen', '1'); } catch (e) {}
          }
        }"
        x-show="open" x-cloak
        x-transition:enter="cr-v11--enter" x-transition:enter-start="cr-v11--from" x-transition:enter-end="cr-v11--to"
        x-transition:leave="cr-v11--enter" x-transition:leave-start="cr-v11--to" x-transition:leave-end="cr-v11--from"
        @keydown.escape.window="open && close()"
-       role="dialog" aria-modal="false" aria-labelledby="cr-v11-title" aria-describedby="cr-v11-text">
-    <button type="button" class="cr-v11__close" @click="close()" aria-label="Close">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6l-12 12"/><path d="M6 6l12 12"/></svg>
-    </button>
-    <div class="cr-v11__head">
-      <span class="cr-v11__mark"><img src="/images/logo-mark-dark.png" alt="" width="120" height="93"></span>
-      <span class="cr-v11__badge">Previous version</span>
-    </div>
-    <h2 class="cr-v11__title" id="cr-v11-title">Area Radar v1.3.0 is ready</h2>
-    <p class="cr-v11__text" id="cr-v11-text">Would you like to see Last Version? </p>
-    <div class="cr-v11__actions">
-      <button type="button" class="cr-v11__btn cr-v11__btn--primary" @click="go()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l14 0"/><path d="M5 12l6 6"/><path d="M5 12l6 -6"/></svg>Back to v1.0</button>
-      <button type="button" class="cr-v11__btn cr-v11__btn--ghost" @click="close()">Stay on v1.1</button>
+       @click.self="close()"
+       role="dialog" aria-modal="true" aria-labelledby="cr-v11-title" aria-describedby="cr-v11-text">
+    <div class="cr-v11__card">
+      <button type="button" class="cr-v11__close" @click="close()" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6l-12 12"/><path d="M6 6l12 12"/></svg>
+      </button>
+      <div class="cr-v11__head">
+        <span class="cr-v11__mark"><img src="/images/logo-mark-dark.png" alt="" width="120" height="93"></span>
+        <span class="cr-v11__badge">New version</span>
+      </div>
+      <h2 class="cr-v11__title" id="cr-v11-title">Area Radar v1.3.0 is ready</h2>
+      <p class="cr-v11__text" id="cr-v11-text">Would you like to see it?</p>
+      <div class="cr-v11__actions">
+        <button type="button" class="cr-v11__btn cr-v11__btn--primary" @click="go()">Yes, show me <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l14 0"/><path d="M13 18l6 -6"/><path d="M13 6l6 6"/></svg></button>
+        <button type="button" class="cr-v11__btn cr-v11__btn--ghost" @click="close()">Not now</button>
+      </div>
     </div>
   </div>
 
